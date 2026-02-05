@@ -3,3 +3,4 @@ rdkit==2025.9.3
 tqdm==4.67.3
 matplotlib==3.10.8
 seaborn==0.13.2
+chembl-webresource-client==0.10.9
