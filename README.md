@@ -19,5 +19,5 @@
 **Structural Based Screening Steps**
 
 1. Using PharmacoNet, automatically generate pharmacophore models based on protein structure
-2. Based on the output of PharmacoNet, generate and optimise 3D ligand conformations to fit the predefined pharmacophore
+2. Based on the output of PharmacoNet, generate and optimise 3D ligand conformations to fit the predefined pharmacophore using DiffPhore
 3. Validate results using molecular docking such as UniDock
