@@ -15,6 +15,7 @@
 2. Create Pharmacophore model from known actives
 3. Validate that models are able to differentiate actives from decoys
 4. Put library through models to generate rankings and hits
+5. Conduct molecular docking to verify hits
 
 **Structural Based Screening Steps**
 
