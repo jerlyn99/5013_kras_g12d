@@ -377,7 +377,7 @@ if __name__ == "__main__":
     feature_cols = [c for c in training_data.columns if c not in metadata_cols]
 
     predictor = KRASInhibitorPredictor(model,  training_data[feature_cols].values)
-    results = predictor.predict_batch(library_ref, selected_features, smiles_col='SMILES', name_col='zinc_id')
+    results = predictor.predict_batch(library_ref, selected_features, smiles_col='SMILES', name_col='ZINC_ID')
  
     os.makedirs("predictions", exist_ok=True)
 
