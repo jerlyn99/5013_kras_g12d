@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import sys
+import joblib
 from rdkit import Chem
 from rdkit.Chem import AllChem, rdFingerprintGenerator, MACCSkeys, RDKFingerprint, SDWriter
 from rdkit.Chem.MolStandardize import rdMolStandardize
@@ -65,7 +66,7 @@ def generate_ecfp4(smiles, radius=2, n_bits=2048):
         return None, str(e)
     
 
-def generate_maccs_fingerprint(mol):
+def generate_maccs_fingerprint(smiles):
     """
     Generate MACCS keys fingerprint (166 bits).
 
@@ -76,12 +77,15 @@ def generate_maccs_fingerprint(mol):
         mol = Chem.MolFromSmiles(smiles)
         if mol is None:
             return None, "Invalid SMILES"
+        
         fp = MACCSkeys.GenMACCSKeys(mol)
-        return np.array(fp)
+
+        return np.array(fp), None
+    
     except Exception as e:
         return None, str(e)
 
-def generate_rdkit_fingerprint(mol, n_bits=2048):
+def generate_rdkit_fingerprint(smiles, n_bits=2048):
     """
     Generate RDKit topological fingerprint.
 
@@ -92,8 +96,11 @@ def generate_rdkit_fingerprint(mol, n_bits=2048):
         mol = Chem.MolFromSmiles(smiles)
         if mol is None:
             return None, "Invalid SMILES"
+        
         fp = RDKFingerprint(mol, fpSize=n_bits)
-        return np.array(fp)
+
+        return np.array(fp), None
+    
     except Exception as e:
         return None, str(e)
 
@@ -114,25 +121,54 @@ def calculate_tanimoto_similarity(fp1, fp_matrix):
     
     return similarity
  
-def assess_applicability_domain(fp, X_train_ref, k=5, threshold=0.3):
+def assess_applicability_domain(combined_fp, X_train_ref, k=5, threshold=0.3):
     """
     Assess if a compound is within the applicability domain.
     
     Returns: (inside_ad, knn_similarity, nearest_neighbor_sim)
     """
+
     if X_train_ref is None:
         return None, None, None
     
-    similarities = calculate_tanimoto_similarity(fp, X_train_ref)
-    
-    # Get k nearest neighbors
-    top_k_sims = np.sort(similarities)[-k:]
-    knn_similarity = top_k_sims.mean()
-    nearest_neighbor_sim = similarities.max()
-    
-    inside_ad = knn_similarity >= threshold
-    
-    return inside_ad, knn_similarity, nearest_neighbor_sim
+    ECFP_LEN = 2048
+    MACCS_LEN = 167
+
+    fp_dict = {
+        "ecfp4": combined_fp[:ECFP_LEN],
+        "maccs": combined_fp[ECFP_LEN:ECFP_LEN+MACCS_LEN],
+        "rdkit": combined_fp[ECFP_LEN+MACCS_LEN:]
+    }
+
+    X_train_dict = {
+        "ecfp4": X_train_ref[:ECFP_LEN],
+        "maccs": X_train_ref[ECFP_LEN:ECFP_LEN+MACCS_LEN],
+        "rdkit": X_train_ref[ECFP_LEN+MACCS_LEN:]
+    }
+
+    ad_results = {}
+    similarities_all = []
+
+    for name, fp in fp_dict.items():
+        sims = calculate_tanimoto_similarity(fp, X_train_dict[name])
+
+        top_k = np.sort(sims)[-k:]
+        knn_sim = top_k.mean()
+        nn_sim = sims.max()
+
+        ad_results[name] = {
+            "inside_ad": knn_sim >= threshold,
+            "knn_similarity": knn_sim,
+            "nearest_neighbor_sim": nn_sim
+        }
+
+        similarities_all.append(knn_sim)
+
+    # Aggregation strategy
+    combined_knn = np.mean(similarities_all)
+    inside_ad_combined = combined_knn >= threshold
+
+    return inside_ad_combined, combined_knn, ad_results
 
 class KRASInhibitorPredictor:
     """
@@ -206,7 +242,7 @@ class KRASInhibitorPredictor:
         
         # AD assessment
         inside_ad, knn_sim, nn_sim = assess_applicability_domain(
-            fp, self.X_train_ref, self.ad_k, self.ad_threshold
+            {'ecfp4': ecfp4_fp, 'maccs': maccs_fp, 'rdkit': rdkit_fp}, self.X_train_ref, self.ad_k, self.ad_threshold
         )
         result['inside_ad'] = inside_ad
         result['knn_similarity'] = knn_sim
@@ -312,11 +348,18 @@ class KRASInhibitorPredictor:
 
 
 if __name__ == "__main__":
-    model = sys.argv[1]
-    input_file = sys.argv[2]
-    training_data = sys.argv[3]
-    predictor = KRASInhibitorPredictor(model, training_data)
-    results = predictor.predict_batch(input_file, smiles_col='SMILES', name_col='compound_name')
+    model_file = sys.argv[1]
+    training_data_file = sys.argv[2]
+    input_file = sys.argv[3]
+
+    training_data = pd.read_csv(training_data_file)
+    model = joblib.load(model_file)
+
+    metadata_cols=['molecule_chembl_id', 'smiles', 'pIC50']
+    feature_cols = [c for c in training_data.columns if c not in metadata_cols]
+
+    predictor = KRASInhibitorPredictor(model,  training_data[feature_cols].values)
+    results = predictor.predict_batch(input_file, smiles_col='SMILES', name_col='zinc_id')
  
     # Display key results
     display_cols = [
