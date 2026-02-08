@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import sys
 import joblib
+from tqdm import tqdm
 from rdkit import Chem
 from rdkit.Chem import AllChem, rdFingerprintGenerator, MACCSkeys, RDKFingerprint, SDWriter
 from rdkit.Chem.MolStandardize import rdMolStandardize
@@ -267,7 +268,7 @@ class KRASInhibitorPredictor:
         
         print(f"Processing {n_total} compounds...")
         
-        for i, row in df.iterrows():
+        for i, row in tqdm(df.iterrows(), total=len(df)):
             smiles = row[smiles_col]
             name = row.get(name_col, f'Compound_{i}')
             
