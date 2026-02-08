@@ -1,7 +1,9 @@
 import numpy as np
 import pandas as pd
 import sys
+import re
 import joblib
+import os
 from tqdm import tqdm
 from rdkit import Chem
 from rdkit.Chem import AllChem, rdFingerprintGenerator, MACCSkeys, RDKFingerprint, SDWriter
@@ -142,9 +144,9 @@ def assess_applicability_domain(combined_fp, X_train_ref, k=5, threshold=0.3):
     }
 
     X_train_dict = {
-        "ecfp4": X_train_ref[:ECFP_LEN],
-        "maccs": X_train_ref[ECFP_LEN:ECFP_LEN+MACCS_LEN],
-        "rdkit": X_train_ref[ECFP_LEN+MACCS_LEN:]
+        "ecfp4": X_train_ref[:, :ECFP_LEN],
+        "maccs": X_train_ref[:, ECFP_LEN:ECFP_LEN+MACCS_LEN],
+        "rdkit": X_train_ref[:, ECFP_LEN+MACCS_LEN:]
     }
 
     ad_results = {}
@@ -188,7 +190,7 @@ class KRASInhibitorPredictor:
             print(f"  AD threshold: {ad_threshold}")
             print(f"  AD k-neighbors: {ad_k}")
     
-    def predict_single(self, smiles, compound_name='Unknown'):
+    def predict_single(self, smiles, feats, compound_name='Unknown'):
         """Predict for a single compound."""
         result = {
             'compound_name': compound_name,
@@ -234,16 +236,27 @@ class KRASInhibitorPredictor:
         maccs_fp = np.asarray(maccs_fp, dtype=float)
         rdkit_fp = np.asarray(rdkit_fp, dtype=float)
 
+        ecfp4_cols = [f'ECFP4_{i}' for i in range(len(ecfp4_fp))]
+        maccs_cols = [f'MACCS_{i}' for i in range(len(maccs_fp))]
+        rdkit_cols = [f'RDKit_{i}' for i in range(len(rdkit_fp))]
+
         # Concatenate in TRAINING ORDER (CRITICAL!)
         combined_fp = np.concatenate([ecfp4_fp, maccs_fp, rdkit_fp])
+        combined_cols = ecfp4_cols + maccs_cols + rdkit_cols
 
         # Reshape for sklearn
-        combined_fp_2d = combined_fp.reshape(1, -1)
-        result['pIC50_pred'] = self.model.predict(combined_fp_2d)[0]
+        combined_fp_2d = pd.DataFrame(
+            [combined_fp],   # shape: (1, N)
+            columns=combined_cols
+        )
+
+        #select features
+        combined_fp_2d = combined_fp_2d.loc[:, combined_fp_2d.columns.intersection(feats)]
+        result['pIC50_pred'] = self.model.predict(combined_fp_2d.values)[0]
         
         # AD assessment
         inside_ad, knn_sim, nn_sim = assess_applicability_domain(
-            {'ecfp4': ecfp4_fp, 'maccs': maccs_fp, 'rdkit': rdkit_fp}, self.X_train_ref, self.ad_k, self.ad_threshold
+            combined_fp, self.X_train_ref, self.ad_k, self.ad_threshold
         )
         result['inside_ad'] = inside_ad
         result['knn_similarity'] = knn_sim
@@ -259,7 +272,7 @@ class KRASInhibitorPredictor:
         
         return result
     
-    def predict_batch(self, df, smiles_col='SMILES', name_col='compound_name'):
+    def predict_batch(self, df, feats, smiles_col='SMILES', name_col='compound_name'):
         """
         Predict for a batch of compounds from a DataFrame.
         """
@@ -272,7 +285,7 @@ class KRASInhibitorPredictor:
             smiles = row[smiles_col]
             name = row.get(name_col, f'Compound_{i}')
             
-            result = self.predict_single(smiles, name)
+            result = self.predict_single(smiles, feats, name)
             results.append(result)
             
             if (i + 1) % 100 == 0:
@@ -319,7 +332,7 @@ class KRASInhibitorPredictor:
         
         return results_df
  
-    def export_to_sdf(results_df, output_file='predictions.sdf'):
+    def export_to_sdf(self, results_df, output_file='predictions.sdf'):
         """Export predictions to SDF format with properties."""
         writer = SDWriter(output_file)
         n_written = 0
@@ -350,18 +363,24 @@ class KRASInhibitorPredictor:
 
 if __name__ == "__main__":
     model_file = sys.argv[1]
-    training_data_file = sys.argv[2]
-    input_file = sys.argv[3]
+    features = sys.argv[2]
+    training_data_file = sys.argv[3]
+    input_file = sys.argv[4]
 
-    training_data = pd.read_csv(training_data_file)
     model = joblib.load(model_file)
+    selected_features = pd.read_csv(features)
+    selected_features = re.findall(r"'(.*?)'", selected_features[selected_features["Feature"] == "CombinedFP"]["Value"].iloc[0])
+    training_data = pd.read_csv(training_data_file)
+    library_ref = pd.read_csv(input_file)
 
     metadata_cols=['molecule_chembl_id', 'smiles', 'pIC50']
     feature_cols = [c for c in training_data.columns if c not in metadata_cols]
 
     predictor = KRASInhibitorPredictor(model,  training_data[feature_cols].values)
-    results = predictor.predict_batch(input_file, smiles_col='SMILES', name_col='zinc_id')
+    results = predictor.predict_batch(library_ref, selected_features, smiles_col='SMILES', name_col='zinc_id')
  
+    os.makedirs("predictions", exist_ok=True)
+
     # Display key results
     display_cols = [
         'compound_name', 'valid', 'pIC50_pred',
@@ -371,7 +390,7 @@ if __name__ == "__main__":
     print(results[display_cols].to_string(index=False))
 
     # Save full results with fingerprints
-    results.to_csv('predictions_full.csv', index=False)
+    results.to_csv('predictions/predictions_full.csv', index=False)
     print("Full results saved to: predictions_full.csv")
     print(f"Columns: {len(results.columns)}")
 
@@ -383,7 +402,7 @@ if __name__ == "__main__":
     ]
 
     results_minimal = results[minimal_cols]
-    results_minimal.to_csv('predictions_minimal.csv', index=False)
+    results_minimal.to_csv('predictions/predictions_minimal.csv', index=False)
     print("Minimal results saved to: predictions_minimal.csv")
 
     # Filter for high-confidence predictions
@@ -400,6 +419,6 @@ if __name__ == "__main__":
     print("Top predictions (sorted by pIC50):")
     print(high_confidence[['compound_name', 'pIC50_pred', 'reliability']].head(10).to_string(index=False))
 
-    predictor.export_to_sdf(results, 'predictions.sdf')
+    predictor.export_to_sdf(results, 'predictions/predictions.sdf')
 
 
