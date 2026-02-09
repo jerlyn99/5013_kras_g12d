@@ -53,7 +53,7 @@
  24 18  1  0
 M  END
 >  <compound_name>  (1) 
-Compound_0
+281556107
 
 >  <pIC50_pred>  (1) 
 5.251
@@ -119,7 +119,7 @@ $$$$
  22 18  1  0
 M  END
 >  <compound_name>  (2) 
-Compound_1
+225486070
 
 >  <pIC50_pred>  (2) 
 4.746
@@ -196,7 +196,7 @@ $$$$
  25 19  1  0
 M  END
 >  <compound_name>  (3) 
-Compound_2
+626588946
 
 >  <pIC50_pred>  (3) 
 5.318
@@ -259,7 +259,7 @@ $$$$
  14  9  1  0
 M  END
 >  <compound_name>  (4) 
-Compound_3
+930236656
 
 >  <pIC50_pred>  (4) 
 5.036
@@ -335,7 +335,7 @@ $$$$
  20 15  1  0
 M  END
 >  <compound_name>  (5) 
-Compound_4
+670447683
 
 >  <pIC50_pred>  (5) 
 5.471
@@ -420,7 +420,7 @@ $$$$
  14  9  1  0
 M  END
 >  <compound_name>  (6) 
-Compound_5
+12427804
 
 >  <pIC50_pred>  (6) 
 5.374
@@ -467,7 +467,7 @@ $$$$
  13  8  1  0
 M  END
 >  <compound_name>  (7) 
-Compound_6
+34435731
 
 >  <pIC50_pred>  (7) 
 5.059
@@ -539,7 +539,7 @@ $$$$
  21 16  1  0
 M  END
 >  <compound_name>  (8) 
-Compound_7
+907848841
 
 >  <pIC50_pred>  (8) 
 5.326
@@ -603,7 +603,7 @@ $$$$
  20 15  1  0
 M  END
 >  <compound_name>  (9) 
-Compound_8
+248024206
 
 >  <pIC50_pred>  (9) 
 5.073
@@ -683,7 +683,7 @@ $$$$
  16 14  1  0
 M  END
 >  <compound_name>  (10) 
-Compound_9
+2382384724
 
 >  <pIC50_pred>  (10) 
 5.196
@@ -739,7 +739,7 @@ $$$$
  17 12  1  0
 M  END
 >  <compound_name>  (11) 
-Compound_10
+42364333
 
 >  <pIC50_pred>  (11) 
 5.262
@@ -807,7 +807,7 @@ $$$$
  21 14  1  0
 M  END
 >  <compound_name>  (12) 
-Compound_11
+13010310
 
 >  <pIC50_pred>  (12) 
 5.218
@@ -878,7 +878,7 @@ $$$$
  22 18  1  0
 M  END
 >  <compound_name>  (13) 
-Compound_12
+16648279
 
 >  <pIC50_pred>  (13) 
 5.261
@@ -946,7 +946,7 @@ $$$$
  17 13  1  0
 M  END
 >  <compound_name>  (14) 
-Compound_13
+17056054
 
 >  <pIC50_pred>  (14) 
 5.080
@@ -1018,7 +1018,7 @@ $$$$
  21 18  1  0
 M  END
 >  <compound_name>  (15) 
-Compound_14
+657453305
 
 >  <pIC50_pred>  (15) 
 5.507
@@ -1114,7 +1114,7 @@ $$$$
  27 22  1  0
 M  END
 >  <compound_name>  (16) 
-Compound_15
+8666949
 
 >  <pIC50_pred>  (16) 
 5.782
@@ -1208,7 +1208,7 @@ $$$$
  25 20  1  0
 M  END
 >  <compound_name>  (17) 
-Compound_16
+2325839679
 
 >  <pIC50_pred>  (17) 
 5.150
@@ -1263,7 +1263,7 @@ $$$$
  17  6  1  0
 M  END
 >  <compound_name>  (18) 
-Compound_17
+95915463
 
 >  <pIC50_pred>  (18) 
 5.479
@@ -1343,7 +1343,7 @@ $$$$
  24 18  1  0
 M  END
 >  <compound_name>  (19) 
-Compound_18
+9358331
 
 >  <pIC50_pred>  (19) 
 5.364
@@ -1401,7 +1401,7 @@ $$$$
  12  7  1  0
 M  END
 >  <compound_name>  (20) 
-Compound_19
+32573478
 
 >  <pIC50_pred>  (20) 
 4.868
@@ -1477,7 +1477,7 @@ $$$$
  26 20  1  0
 M  END
 >  <compound_name>  (21) 
-Compound_20
+190158766
 
 >  <pIC50_pred>  (21) 
 5.187
@@ -1545,7 +1545,7 @@ $$$$
  23 18  1  0
 M  END
 >  <compound_name>  (22) 
-Compound_21
+70636788
 
 >  <pIC50_pred>  (22) 
 5.091
@@ -1609,7 +1609,7 @@ $$$$
  21 14  1  0
 M  END
 >  <compound_name>  (23) 
-Compound_22
+95961047
 
 >  <pIC50_pred>  (23) 
 5.218
@@ -1689,7 +1689,7 @@ $$$$
  14  9  1  0
 M  END
 >  <compound_name>  (24) 
-Compound_23
+1889149046
 
 >  <pIC50_pred>  (24) 
 5.370
@@ -1749,7 +1749,7 @@ $$$$
  16 12  1  0
 M  END
 >  <compound_name>  (25) 
-Compound_24
+584885303
 
 >  <pIC50_pred>  (25) 
 5.212
@@ -1816,7 +1816,7 @@ $$$$
  17 12  1  0
 M  END
 >  <compound_name>  (26) 
-Compound_25
+71283272
 
 >  <pIC50_pred>  (26) 
 5.947
@@ -1889,7 +1889,7 @@ $$$$
  25 20  1  0
 M  END
 >  <compound_name>  (27) 
-Compound_26
+1775980436
 
 >  <pIC50_pred>  (27) 
 5.141
@@ -1961,7 +1961,7 @@ $$$$
  24 20  2  0
 M  END
 >  <compound_name>  (28) 
-Compound_27
+249685465
 
 >  <pIC50_pred>  (28) 
 5.661
@@ -2032,7 +2032,7 @@ $$$$
  21 16  1  0
 M  END
 >  <compound_name>  (29) 
-Compound_28
+65495496
 
 >  <pIC50_pred>  (29) 
 5.477
@@ -2103,7 +2103,7 @@ $$$$
  22 18  1  0
 M  END
 >  <compound_name>  (30) 
-Compound_29
+104879269
 
 >  <pIC50_pred>  (30) 
 4.999
@@ -2184,7 +2184,7 @@ $$$$
  25 20  1  0
 M  END
 >  <compound_name>  (31) 
-Compound_30
+2196943
 
 >  <pIC50_pred>  (31) 
 5.622
@@ -2255,7 +2255,7 @@ $$$$
  22 16  1  0
 M  END
 >  <compound_name>  (32) 
-Compound_31
+2384423237
 
 >  <pIC50_pred>  (32) 
 5.547
@@ -2301,7 +2301,7 @@ $$$$
  11  6  1  0
 M  END
 >  <compound_name>  (33) 
-Compound_32
+83255619
 
 >  <pIC50_pred>  (33) 
 4.920
@@ -2380,7 +2380,7 @@ $$$$
  28  5  1  0
 M  END
 >  <compound_name>  (34) 
-Compound_33
+63162047
 
 >  <pIC50_pred>  (34) 
 5.378
@@ -2448,7 +2448,7 @@ $$$$
  21 13  1  0
 M  END
 >  <compound_name>  (35) 
-Compound_34
+91381018
 
 >  <pIC50_pred>  (35) 
 5.371
@@ -2488,7 +2488,7 @@ $$$$
   9 10  1  0
 M  END
 >  <compound_name>  (36) 
-Compound_35
+2164143
 
 >  <pIC50_pred>  (36) 
 5.034
@@ -2560,7 +2560,7 @@ $$$$
  22 16  1  0
 M  END
 >  <compound_name>  (37) 
-Compound_36
+71882770
 
 >  <pIC50_pred>  (37) 
 4.905
@@ -2626,7 +2626,7 @@ $$$$
  19 14  1  0
 M  END
 >  <compound_name>  (38) 
-Compound_37
+5426503
 
 >  <pIC50_pred>  (38) 
 5.137
@@ -2718,7 +2718,7 @@ $$$$
  31 25  1  0
 M  END
 >  <compound_name>  (39) 
-Compound_38
+12761312
 
 >  <pIC50_pred>  (39) 
 5.238
@@ -2801,7 +2801,7 @@ $$$$
  26 22  1  0
 M  END
 >  <compound_name>  (40) 
-Compound_39
+13592011
 
 >  <pIC50_pred>  (40) 
 5.612
@@ -2874,7 +2874,7 @@ $$$$
  22 17  1  0
 M  END
 >  <compound_name>  (41) 
-Compound_40
+630131220
 
 >  <pIC50_pred>  (41) 
 5.565
@@ -2924,7 +2924,7 @@ $$$$
  10  5  1  0
 M  END
 >  <compound_name>  (42) 
-Compound_41
+98095900
 
 >  <pIC50_pred>  (42) 
 4.984
@@ -3002,7 +3002,7 @@ $$$$
  23 18  1  0
 M  END
 >  <compound_name>  (43) 
-Compound_42
+72472831
 
 >  <pIC50_pred>  (43) 
 5.684
@@ -3085,7 +3085,7 @@ $$$$
  20 15  1  0
 M  END
 >  <compound_name>  (44) 
-Compound_43
+2325791489
 
 >  <pIC50_pred>  (44) 
 5.412
@@ -3171,7 +3171,7 @@ $$$$
  25 20  1  0
 M  END
 >  <compound_name>  (45) 
-Compound_44
+17130267
 
 >  <pIC50_pred>  (45) 
 5.521
@@ -3257,7 +3257,7 @@ $$$$
  22 17  1  0
 M  END
 >  <compound_name>  (46) 
-Compound_45
+10188880
 
 >  <pIC50_pred>  (46) 
 5.226
@@ -3315,7 +3315,7 @@ $$$$
  17 11  1  0
 M  END
 >  <compound_name>  (47) 
-Compound_46
+13746804
 
 >  <pIC50_pred>  (47) 
 5.112
@@ -3387,7 +3387,7 @@ $$$$
  23  7  1  0
 M  END
 >  <compound_name>  (48) 
-Compound_47
+23990094
 
 >  <pIC50_pred>  (48) 
 5.810
@@ -3473,7 +3473,7 @@ $$$$
  27 21  1  0
 M  END
 >  <compound_name>  (49) 
-Compound_48
+1875361656
 
 >  <pIC50_pred>  (49) 
 5.546
@@ -3572,7 +3572,7 @@ $$$$
  24 18  1  0
 M  END
 >  <compound_name>  (50) 
-Compound_49
+103027191
 
 >  <pIC50_pred>  (50) 
 5.453
@@ -3640,7 +3640,7 @@ $$$$
  18 14  1  0
 M  END
 >  <compound_name>  (51) 
-Compound_50
+11663506
 
 >  <pIC50_pred>  (51) 
 5.036
@@ -3711,7 +3711,7 @@ $$$$
  19 13  2  0
 M  END
 >  <compound_name>  (52) 
-Compound_51
+43727271
 
 >  <pIC50_pred>  (52) 
 5.338
@@ -3779,7 +3779,7 @@ $$$$
  23 18  1  0
 M  END
 >  <compound_name>  (53) 
-Compound_52
+95417913
 
 >  <pIC50_pred>  (53) 
 4.729
@@ -3834,7 +3834,7 @@ $$$$
  16  7  1  0
 M  END
 >  <compound_name>  (54) 
-Compound_53
+953065812
 
 >  <pIC50_pred>  (54) 
 4.945
@@ -3916,7 +3916,7 @@ $$$$
  12  6  1  0
 M  END
 >  <compound_name>  (55) 
-Compound_54
+11935921
 
 >  <pIC50_pred>  (55) 
 5.246
@@ -3983,7 +3983,7 @@ $$$$
  18 12  1  0
 M  END
 >  <compound_name>  (56) 
-Compound_55
+285934549
 
 >  <pIC50_pred>  (56) 
 4.670
@@ -4056,7 +4056,7 @@ $$$$
  21 15  1  0
 M  END
 >  <compound_name>  (57) 
-Compound_56
+32050006
 
 >  <pIC50_pred>  (57) 
 5.338
@@ -4127,7 +4127,7 @@ $$$$
  22 18  1  0
 M  END
 >  <compound_name>  (58) 
-Compound_57
+44935415
 
 >  <pIC50_pred>  (58) 
 5.203
@@ -4206,7 +4206,7 @@ $$$$
  23 18  1  0
 M  END
 >  <compound_name>  (59) 
-Compound_58
+4278180
 
 >  <pIC50_pred>  (59) 
 5.214
@@ -4286,7 +4286,7 @@ $$$$
  28 14  1  0
 M  END
 >  <compound_name>  (60) 
-Compound_59
+1875396214
 
 >  <pIC50_pred>  (60) 
 5.466
@@ -4362,7 +4362,7 @@ $$$$
  17 13  1  0
 M  END
 >  <compound_name>  (61) 
-Compound_60
+4088395
 
 >  <pIC50_pred>  (61) 
 5.399
@@ -4433,7 +4433,7 @@ $$$$
  18 14  2  0
 M  END
 >  <compound_name>  (62) 
-Compound_61
+77300259
 
 >  <pIC50_pred>  (62) 
 5.921
@@ -4504,7 +4504,7 @@ $$$$
  22 17  1  0
 M  END
 >  <compound_name>  (63) 
-Compound_62
+12795441
 
 >  <pIC50_pred>  (63) 
 5.693
@@ -4567,7 +4567,7 @@ $$$$
  16 11  1  0
 M  END
 >  <compound_name>  (64) 
-Compound_63
+49090233
 
 >  <pIC50_pred>  (64) 
 5.702
@@ -4630,7 +4630,7 @@ $$$$
  14 10  1  0
 M  END
 >  <compound_name>  (65) 
-Compound_64
+334765272
 
 >  <pIC50_pred>  (65) 
 5.476
@@ -4692,7 +4692,7 @@ $$$$
  17 12  1  0
 M  END
 >  <compound_name>  (66) 
-Compound_65
+584898626
 
 >  <pIC50_pred>  (66) 
 5.165
@@ -4753,7 +4753,7 @@ $$$$
  17 12  1  0
 M  END
 >  <compound_name>  (67) 
-Compound_66
+97096818
 
 >  <pIC50_pred>  (67) 
 5.370
@@ -4823,7 +4823,7 @@ $$$$
  22 17  1  0
 M  END
 >  <compound_name>  (68) 
-Compound_67
+2382308490
 
 >  <pIC50_pred>  (68) 
 5.373
@@ -4886,7 +4886,7 @@ $$$$
  20 14  1  0
 M  END
 >  <compound_name>  (69) 
-Compound_68
+1776832
 
 >  <pIC50_pred>  (69) 
 5.015
@@ -4952,7 +4952,7 @@ $$$$
  19 15  2  0
 M  END
 >  <compound_name>  (70) 
-Compound_69
+651375817
 
 >  <pIC50_pred>  (70) 
 5.256
@@ -5024,7 +5024,7 @@ $$$$
  23 18  1  0
 M  END
 >  <compound_name>  (71) 
-Compound_70
+14807333
 
 >  <pIC50_pred>  (71) 
 4.869
@@ -5103,7 +5103,7 @@ $$$$
  26 16  1  0
 M  END
 >  <compound_name>  (72) 
-Compound_71
+987783
 
 >  <pIC50_pred>  (72) 
 4.809
@@ -5178,7 +5178,7 @@ $$$$
  21 15  1  0
 M  END
 >  <compound_name>  (73) 
-Compound_72
+21800728
 
 >  <pIC50_pred>  (73) 
 5.196
@@ -5230,7 +5230,7 @@ $$$$
  14  9  1  0
 M  END
 >  <compound_name>  (74) 
-Compound_73
+584880870
 
 >  <pIC50_pred>  (74) 
 5.267
@@ -5278,7 +5278,7 @@ $$$$
  12  5  1  0
 M  END
 >  <compound_name>  (75) 
-Compound_74
+16605381
 
 >  <pIC50_pred>  (75) 
 5.076
@@ -5340,7 +5340,7 @@ $$$$
  19 14  1  0
 M  END
 >  <compound_name>  (76) 
-Compound_75
+239591365
 
 >  <pIC50_pred>  (76) 
 4.843
@@ -5411,7 +5411,7 @@ $$$$
  18 12  1  0
 M  END
 >  <compound_name>  (77) 
-Compound_76
+69700427
 
 >  <pIC50_pred>  (77) 
 5.064
@@ -5475,7 +5475,7 @@ $$$$
  20 15  1  0
 M  END
 >  <compound_name>  (78) 
-Compound_77
+55941984
 
 >  <pIC50_pred>  (78) 
 4.924
@@ -5544,7 +5544,7 @@ $$$$
  11  6  1  0
 M  END
 >  <compound_name>  (79) 
-Compound_78
+20617115
 
 >  <pIC50_pred>  (79) 
 5.482
@@ -5625,7 +5625,7 @@ $$$$
  24 19  1  0
 M  END
 >  <compound_name>  (80) 
-Compound_79
+22934368
 
 >  <pIC50_pred>  (80) 
 4.753
@@ -5713,7 +5713,7 @@ $$$$
  25  8  1  0
 M  END
 >  <compound_name>  (81) 
-Compound_80
+8778473
 
 >  <pIC50_pred>  (81) 
 5.566
@@ -5790,7 +5790,7 @@ $$$$
  17 13  2  0
 M  END
 >  <compound_name>  (82) 
-Compound_81
+2382383477
 
 >  <pIC50_pred>  (82) 
 5.608
@@ -5850,7 +5850,7 @@ $$$$
  18 13  1  0
 M  END
 >  <compound_name>  (83) 
-Compound_82
+171235419
 
 >  <pIC50_pred>  (83) 
 5.534
@@ -5927,7 +5927,7 @@ $$$$
  25 19  1  0
 M  END
 >  <compound_name>  (84) 
-Compound_83
+6805828
 
 >  <pIC50_pred>  (84) 
 4.950
@@ -6003,7 +6003,7 @@ $$$$
  25 19  1  0
 M  END
 >  <compound_name>  (85) 
-Compound_84
+32097106
 
 >  <pIC50_pred>  (85) 
 5.079
@@ -6082,7 +6082,7 @@ $$$$
  26 21  1  0
 M  END
 >  <compound_name>  (86) 
-Compound_85
+22786633
 
 >  <pIC50_pred>  (86) 
 5.231
@@ -6150,7 +6150,7 @@ $$$$
  20 15  2  0
 M  END
 >  <compound_name>  (87) 
-Compound_86
+106868146
 
 >  <pIC50_pred>  (87) 
 5.411
@@ -6221,7 +6221,7 @@ $$$$
  23 18  1  0
 M  END
 >  <compound_name>  (88) 
-Compound_87
+262229539
 
 >  <pIC50_pred>  (88) 
 5.258
@@ -6296,7 +6296,7 @@ $$$$
  23 17  1  0
 M  END
 >  <compound_name>  (89) 
-Compound_88
+211077969
 
 >  <pIC50_pred>  (89) 
 5.106
@@ -6357,7 +6357,7 @@ $$$$
  19 15  1  0
 M  END
 >  <compound_name>  (90) 
-Compound_89
+1565512349
 
 >  <pIC50_pred>  (90) 
 5.070
@@ -6428,7 +6428,7 @@ $$$$
  23 10  1  0
 M  END
 >  <compound_name>  (91) 
-Compound_90
+5005416
 
 >  <pIC50_pred>  (91) 
 5.234
@@ -6484,7 +6484,7 @@ $$$$
  17 10  1  0
 M  END
 >  <compound_name>  (92) 
-Compound_91
+1628625
 
 >  <pIC50_pred>  (92) 
 4.987
@@ -6547,7 +6547,7 @@ $$$$
  20  4  1  0
 M  END
 >  <compound_name>  (93) 
-Compound_92
+1615046111
 
 >  <pIC50_pred>  (93) 
 5.099
@@ -6605,7 +6605,7 @@ $$$$
  18 16  1  0
 M  END
 >  <compound_name>  (94) 
-Compound_93
+909321951
 
 >  <pIC50_pred>  (94) 
 5.399
@@ -6681,7 +6681,7 @@ $$$$
  24 19  1  0
 M  END
 >  <compound_name>  (95) 
-Compound_94
+1565514049
 
 >  <pIC50_pred>  (95) 
 5.044
@@ -6740,7 +6740,7 @@ $$$$
  17 10  1  0
 M  END
 >  <compound_name>  (96) 
-Compound_95
+1851487884
 
 >  <pIC50_pred>  (96) 
 5.285
@@ -6798,7 +6798,7 @@ $$$$
  17 19  2  0
 M  END
 >  <compound_name>  (97) 
-Compound_96
+199806908
 
 >  <pIC50_pred>  (97) 
 5.281
@@ -6885,7 +6885,7 @@ $$$$
  15 10  1  0
 M  END
 >  <compound_name>  (98) 
-Compound_97
+8867797
 
 >  <pIC50_pred>  (98) 
 6.109
@@ -6945,7 +6945,7 @@ $$$$
  18 13  1  0
 M  END
 >  <compound_name>  (99) 
-Compound_98
+220678406
 
 >  <pIC50_pred>  (99) 
 5.152
@@ -7016,7 +7016,7 @@ $$$$
  22 17  1  0
 M  END
 >  <compound_name>  (100) 
-Compound_99
+189937402
 
 >  <pIC50_pred>  (100) 
 5.200
