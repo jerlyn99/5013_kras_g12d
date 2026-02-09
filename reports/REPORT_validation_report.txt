@@ -1,0 +1,9 @@
+QSAR MODEL VALIDATION REPORT
+============================================================
+Model: Random Forest (Fingerprints) - Baseline
+Date: 2026-02-09
+
+Test R²: 0.6834 [95% CI: 0.5744-0.7725]
+Test RMSE: 0.6893 [95% CI: 0.5871-0.7944]
+Y-randomization Z-score: 10.44
+All Golbraikh-Tropsha criteria: PASS

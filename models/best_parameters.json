@@ -2,25 +2,52 @@
   "random_forest_baseline": {
     "representation": "Combined FP (ECFP4, MACCS, RDKit)",
     "parameters": {
-      "max_depth": null,
+      "max_depth": 20,
       "max_features": "sqrt",
       "min_samples_leaf": 1,
-      "min_samples_split": 2,
+      "min_samples_split": 5,
       "n_estimators": 200
     },
-    "cv_rmse": 0.6604613558697205,
-    "test_r2": 0.5598683849305359,
-    "test_rmse": 0.8422094140040618
+    "cv_rmse": 0.7066532919621227,
+    "test_r2": 0.5704772166954415,
+    "test_rmse": 0.812663031063135
   },
   "svr_optimized": {
     "representation": "Combined FP (ECFP4, MACCS, RDKit)",
     "parameters": {
       "C": 10.0,
-      "epsilon": 0.5,
-      "gamma": "auto"
+      "epsilon": 0.01,
+      "gamma": 0.01
     },
-    "cv_rmse": 0.6631408902926729,
-    "test_r2": 0.5745119710506135,
-    "test_rmse": 0.828080354882802
+    "cv_rmse": 0.6804439517647587,
+    "test_r2": 0.6910094408150292,
+    "test_rmse": 0.689270999382315
+  },
+  "xgb_optimized": {
+    "representation": "Combined FP (ECFP4, MACCS, RDKit)",
+    "parameters": {
+      "colsample_bytree": 0.5,
+      "learning_rate": 0.1,
+      "max_depth": 3,
+      "n_estimators": 300,
+      "subsample": 0.6
+    },
+    "cv_rmse": 0.6373193829793911,
+    "test_r2": 0.6272561204153633,
+    "test_rmse": 0.7570466842158438
+  },
+  "lgbm_optimized": {
+    "representation": "Combined FP (ECFP4, MACCS, RDKit)",
+    "parameters": {
+      "lambda_l1": 0.0,
+      "lambda_l2": 0.0,
+      "learning_rate": 0.1,
+      "min_data_in_leaf": 20,
+      "n_estimators": 200,
+      "num_leaves": 15
+    },
+    "cv_rmse": 0.6463667131042409,
+    "test_r2": 0.6627107831485641,
+    "test_rmse": 0.720142810961182
   }
 }
