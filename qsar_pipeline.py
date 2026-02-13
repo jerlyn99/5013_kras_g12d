@@ -4,6 +4,7 @@ import sys
 import re
 import joblib
 import os
+import ast
 from tqdm import tqdm
 from rdkit import Chem
 from rdkit.Chem import AllChem, rdFingerprintGenerator, MACCSkeys, RDKFingerprint, SDWriter
@@ -83,7 +84,7 @@ def generate_maccs_fingerprint(smiles):
         
         fp = MACCSkeys.GenMACCSKeys(mol)
 
-        return np.array(fp), None
+        return np.array(fp, dtype=float), None
     
     except Exception as e:
         return None, str(e)
@@ -100,6 +101,7 @@ def generate_rdkit_fingerprint(smiles, n_bits=2048):
         if mol is None:
             return None, "Invalid SMILES"
         
+        # shape is 1D (n_bits,)
         fp = RDKFingerprint(mol, fpSize=n_bits)
 
         return np.array(fp), None
@@ -134,44 +136,57 @@ def assess_applicability_domain(combined_fp, X_train_ref, k=5, threshold=0.3):
     if X_train_ref is None:
         return None, None, None
     
-    ECFP_LEN = 2048
-    MACCS_LEN = 167
+    #ECFP_LEN = 2048
+    #MACCS_LEN = 167
 
-    fp_dict = {
-        "ecfp4": combined_fp[:ECFP_LEN],
-        "maccs": combined_fp[ECFP_LEN:ECFP_LEN+MACCS_LEN],
-        "rdkit": combined_fp[ECFP_LEN+MACCS_LEN:]
-    }
+    #fp_dict = {
+    #    "ecfp4": combined_fp[:ECFP_LEN],
+    #    "maccs": combined_fp[ECFP_LEN:ECFP_LEN+MACCS_LEN],
+    #    "rdkit": combined_fp[ECFP_LEN+MACCS_LEN:]
+    #}
 
-    X_train_dict = {
-        "ecfp4": X_train_ref[:, :ECFP_LEN],
-        "maccs": X_train_ref[:, ECFP_LEN:ECFP_LEN+MACCS_LEN],
-        "rdkit": X_train_ref[:, ECFP_LEN+MACCS_LEN:]
-    }
+    #X_train_dict = {
+    #    "ecfp4": X_train_ref[:, :ECFP_LEN],
+    #    "maccs": X_train_ref[:, ECFP_LEN:ECFP_LEN+MACCS_LEN],
+    #    "rdkit": X_train_ref[:, ECFP_LEN+MACCS_LEN:]
+    #}
 
-    ad_results = {}
-    similarities_all = []
+    #ad_results = {}
+    #similarities_all = []
 
-    for name, fp in fp_dict.items():
-        sims = calculate_tanimoto_similarity(fp, X_train_dict[name])
+    #for name, fp in fp_dict.items():
+    #    sims = calculate_tanimoto_similarity(fp, X_train_dict[name])
 
-        top_k = np.sort(sims)[-k:]
-        knn_sim = top_k.mean()
-        nn_sim = sims.max()
+    #    top_k = np.sort(sims)[-k:]
+    #    knn_sim = top_k.mean()
+    #    nn_sim = sims.max()
 
-        ad_results[name] = {
+    #    ad_results[name] = {
+    #        "inside_ad": knn_sim >= threshold,
+    #        "knn_similarity": knn_sim,
+    #        "nearest_neighbor_sim": nn_sim
+    #    }
+
+    #    similarities_all.append(knn_sim)
+
+    sims = calculate_tanimoto_similarity(combined_fp, X_train_ref)
+    top_k = np.sort(sims)[-k:]
+    knn_sim = top_k.mean()
+    nn_sim = sims.max()
+
+    # Aggregation strategy
+    #combined_knn = np.mean(similarities_all)
+    #inside_ad_combined = combined_knn >= threshold
+
+    ad_results = {
             "inside_ad": knn_sim >= threshold,
             "knn_similarity": knn_sim,
             "nearest_neighbor_sim": nn_sim
         }
 
-        similarities_all.append(knn_sim)
+    #return inside_ad_combined, combined_knn, ad_results
 
-    # Aggregation strategy
-    combined_knn = np.mean(similarities_all)
-    inside_ad_combined = combined_knn >= threshold
-
-    return inside_ad_combined, combined_knn, ad_results
+    return knn_sim >= threshold, knn_sim, ad_results
 
 class KRASInhibitorPredictor:
     """
@@ -214,49 +229,64 @@ class KRASInhibitorPredictor:
         result['standardized_smiles'] = std_smiles
         
         # Generate fingerprint
-        ecfp4_fp, error_ecfp4 = generate_ecfp4(std_smiles)
-        maccs_fp, error_maccs = generate_maccs_fingerprint(std_smiles)
+        #ecfp4_fp, error_ecfp4 = generate_ecfp4(std_smiles)
+        #maccs_fp, error_maccs = generate_maccs_fingerprint(std_smiles)
         rdkit_fp, error_rdkit = generate_rdkit_fingerprint(std_smiles)
-        if error_ecfp4 or error_maccs or error_rdkit:
+        if error_rdkit:
+        #if error_ecfp4 or error_maccs or error_rdkit:
+        #    result['valid'] = False
+        #    result['error'] = {
+        #        'ecfp4': error_ecfp4,
+        #        'maccs': error_maccs,
+        #        'rdkit': error_rdkit
+        #    }
             result['valid'] = False
-            result['error'] = {
-                'ecfp4': error_ecfp4,
-                'maccs': error_maccs,
-                'rdkit': error_rdkit
-            }
+            result['error'] = error_rdkit
             return result
 
-        result['ecfp4_fp'] = np.asarray(ecfp4_fp, dtype=float)
-        result['maccs_fp'] = np.asarray(maccs_fp, dtype=float)
-        result['rdkit_fp'] = np.asarray(rdkit_fp, dtype=float)
+        #result['ecfp4_fp'] = np.asarray(ecfp4_fp, dtype=float)
+        #result['maccs_fp'] = np.asarray(maccs_fp, dtype=float)
+        result['rdkit_fp'] = rdkit_fp
         result['valid'] = True
         
         # Predict
-        ecfp4_fp = np.asarray(ecfp4_fp, dtype=float)
-        maccs_fp = np.asarray(maccs_fp, dtype=float)
-        rdkit_fp = np.asarray(rdkit_fp, dtype=float)
+        #ecfp4_fp = np.asarray(ecfp4_fp, dtype=float)
+        #maccs_fp = np.asarray(maccs_fp, dtype=float)
+        #rdkit_fp = np.asarray(rdkit_fp, dtype=float)
 
-        ecfp4_cols = [f'ECFP4_{i}' for i in range(len(ecfp4_fp))]
-        maccs_cols = [f'MACCS_{i}' for i in range(len(maccs_fp))]
+        #ecfp4_cols = [f'ECFP4_{i}' for i in range(len(ecfp4_fp))]
+        #maccs_cols = [f'MACCS_{i}' for i in range(len(maccs_fp))]
         rdkit_cols = [f'RDKit_{i}' for i in range(len(rdkit_fp))]
 
         # Concatenate in TRAINING ORDER (CRITICAL!)
-        combined_fp = np.concatenate([ecfp4_fp, maccs_fp, rdkit_fp])
-        combined_cols = ecfp4_cols + maccs_cols + rdkit_cols
+        #combined_fp = np.concatenate([ecfp4_fp, maccs_fp, rdkit_fp])
+        #combined_cols = ecfp4_cols + maccs_cols + rdkit_cols
 
         # Reshape for sklearn
-        combined_fp_2d = pd.DataFrame(
-            [combined_fp],   # shape: (1, N)
-            columns=combined_cols
-        )
+        #combined_fp_2d = pd.DataFrame(
+        #    [combined_fp],   # shape: (1, N)
+        #    columns=combined_cols
+        #)
 
         #select features
-        combined_fp_2d = combined_fp_2d.loc[:, combined_fp_2d.columns.intersection(feats)]
-        result['pIC50_pred'] = self.model.predict(combined_fp_2d.values)[0]
+        #combined_fp_2d = combined_fp_2d.loc[:, combined_fp_2d.columns.intersection(feats)]
+        #result['pIC50_pred'] = self.model.predict(combined_fp_2d.values)[0]
+
+        # reshape fingerprint to 2D with shape (1, n_bits)
+        combined_fp_2d = rdkit_fp.reshape(1, -1)
+
+        # make DataFrame with RDKit column names
+        combined_fp_2d = pd.DataFrame(combined_fp_2d, columns=rdkit_cols)
+
+        # select features
+        combined_fp_selected = combined_fp_2d.loc[:, combined_fp_2d.columns.intersection(feats)]
+
+        # predict
+        result['pIC50_pred'] = self.model.predict(combined_fp_selected)[0]
         
         # AD assessment
         inside_ad, knn_sim, nn_sim = assess_applicability_domain(
-            combined_fp, self.X_train_ref, self.ad_k, self.ad_threshold
+           combined_fp_selected.values, self.X_train_ref, self.ad_k, self.ad_threshold
         )
         result['inside_ad'] = inside_ad
         result['knn_similarity'] = knn_sim
@@ -295,32 +325,43 @@ class KRASInhibitorPredictor:
         results_df = pd.DataFrame(results)
         
         # Add ecfp4 fingerprint columns
-        ecfp4_cols = [f'ECFP4_{i}' for i in range(2048)]
-        ecfp4_matrix = np.vstack([
-            r['ecfp4_fp'] if r['ecfp4_fp'] is not None else np.zeros(2048)
-            for r in results
-        ])
-        ecfp4_df = pd.DataFrame(ecfp4_matrix, columns=ecfp4_cols)
+        #ecfp4_cols = [f'ECFP4_{i}' for i in range(2048)]
+        #ecfp4_matrix = np.vstack([
+        #    r['ecfp4_fp'] if r['ecfp4_fp'] is not None else np.zeros(2048)
+        #    for r in results
+        #])
+        #ecfp4_df = pd.DataFrame(ecfp4_matrix, columns=ecfp4_cols)
 
         # Add maccs fingerprint columns
-        maccs_cols = [f'MACCS_{i}' for i in range(167)]
-        maccs_matrix = np.vstack([
-            r['maccs_fp'] if r['maccs_fp'] is not None else np.zeros(167)
-            for r in results
-        ])
-        maccs_df = pd.DataFrame(maccs_matrix, columns=maccs_cols)
+        #maccs_cols = [f'MACCS_{i}' for i in range(167)]
+        #maccs_matrix = np.vstack([
+        #    r['maccs_fp'] if r['maccs_fp'] is not None else np.zeros(167)
+        #    for r in results
+        #])
+        #maccs_df = pd.DataFrame(maccs_matrix, columns=maccs_cols)
 
         # Add rdkit fingerprint columns
+        #rdkit_cols = [f'RDKit_{i}' for i in range(2048)]
+        #rdkit_matrix = np.vstack([
+        #    r['rdkit_fp'] if r['rdkit_fp'] is not None else np.zeros(2048)
+        #    for r in results
+        #])
+        #rdkit_df = pd.DataFrame(rdkit_matrix, columns=rdkit_cols)
+        #results_df = pd.concat([results_df, rdkit_df], axis=1)
+
         rdkit_cols = [f'RDKit_{i}' for i in range(2048)]
         rdkit_matrix = np.vstack([
-            r['rdkit_fp'] if r['rdkit_fp'] is not None else np.zeros(2048)
+            r['rdkit_fp'] if r['valid'] and r['rdkit_fp'] is not None else np.zeros(2048)
             for r in results
         ])
         rdkit_df = pd.DataFrame(rdkit_matrix, columns=rdkit_cols)
+        rdkit_df = rdkit_df.loc[:, rdkit_df.columns.intersection(feats)]
+        results_df.drop(columns=['rdkit_fp'])
+        results_df = pd.concat([results_df, rdkit_df], axis=1)
         
         # Combine (without duplicate fingerprint column)
-        results_df = results_df.drop(columns=['ecfp4_fp', 'maccs_fp', 'rdkit_fp'])
-        results_df = pd.concat([results_df, ecfp4_df, maccs_df, rdkit_df], axis=1)
+        #results_df = results_df.drop(columns=['ecfp4_fp', 'maccs_fp', 'rdkit_fp'])
+        #results_df = pd.concat([results_df, ecfp4_df, maccs_df, rdkit_df], axis=1)
         
         # Summary
         n_valid = results_df['valid'].sum()
@@ -369,16 +410,23 @@ if __name__ == "__main__":
 
     model = joblib.load(model_file)
     selected_features = pd.read_csv(features)
-    selected_features = re.findall(r"'(.*?)'", selected_features[selected_features["Feature"] == "CombinedFP"]["Value"].iloc[0])
+    selected_features = ast.literal_eval(
+        selected_features.loc[
+            selected_features["Feature"] == "RDKit", "Value"
+        ].iloc[0]
+    )    
+    #selected_features = re.findall(r"'(.*?)'", selected_features[selected_features["Feature"] == "RDKit"]["Value"].iloc[0])
     training_data = pd.read_csv(training_data_file)
     library_ref = pd.read_csv(input_file)
 
-    metadata_cols=['molecule_chembl_id', 'smiles', 'pIC50']
-    feature_cols = [c for c in training_data.columns if c not in metadata_cols]
+    #metadata_cols=['molecule_chembl_id', 'smiles', 'pIC50']
+    #feature_cols = [c for c in training_data.columns if c not in metadata_cols]
 
-    predictor = KRASInhibitorPredictor(model,  training_data[feature_cols].values)
+    predictor = KRASInhibitorPredictor(model,  training_data[selected_features].values)
     results = predictor.predict_batch(library_ref, selected_features, smiles_col='SMILES', name_col='ZINC_ID')
  
+    print(results.shape)
+
     os.makedirs("predictions", exist_ok=True)
 
     # Display key results
