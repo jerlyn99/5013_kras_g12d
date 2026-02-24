@@ -1,0 +1,9 @@
+QSAR MODEL VALIDATION REPORT
+============================================================
+Model: SVR Combined FP - Optimized
+Date: 2026-02-24
+
+Test R²: 0.6899 [95% CI: 0.5603-0.7900]
+Test RMSE: 0.6138 [95% CI: 0.5194-0.7038]
+Y-randomization Z-score: 17.97
+All Golbraikh-Tropsha criteria: PASS
