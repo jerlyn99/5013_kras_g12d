@@ -10,6 +10,12 @@ from rdkit.Chem.MolStandardize import rdMolStandardize
 from sklearn.feature_selection import mutual_info_regression
 from concurrent.futures import ProcessPoolExecutor
 from sklearn.base import BaseEstimator, TransformerMixin
+from threadpoolctl import threadpool_limits
+
+# Inside your main() or init_worker
+# This ensures each worker only uses 1 thread for math, 
+# letting the ProcessPoolExecutor handle the parallelism.
+threadpool_limits(limits=1, user_api='blas')
 
 # --- 1. GLOBAL CONSTANTS (Structural Rules) ---
 # Defined here so EVERY function can see them immediately
