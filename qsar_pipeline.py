@@ -8,8 +8,7 @@ from rdkit import Chem
 from rdkit.Chem import rdFingerprintGenerator, MACCSkeys, RDKFingerprint, SDWriter
 from rdkit.Chem.MolStandardize import rdMolStandardize
 from sklearn.feature_selection import mutual_info_regression
-
-import pandas as pd
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from sklearn.base import BaseEstimator, TransformerMixin
 
 class clean_features(BaseEstimator, TransformerMixin):
@@ -270,6 +269,104 @@ def assess_applicability_domain(combined_fp, X_train_ref, k=5, threshold=0.3):
 
     #return knn_sim >= threshold, knn_sim, ad_results
 
+def process_single_smiles(args):
+    """
+    Worker function to process one SMILES.
+    args: (smiles, name, model, X_train_ref, ad_k, ad_threshold)
+    """
+    smiles, name, model, X_train_ref, ad_k, ad_threshold = args
+    
+    # 1. Standardize
+    std_smiles, error = standardize_smiles(smiles)
+    if error:
+        return {'compound_name': name, 'valid': False, 'error': error}
+
+    # 2. Generate Fingerprints
+    ecfp4_fp, _ = generate_ecfp4(std_smiles)
+    maccs_fp, _ = generate_maccs_fingerprint(std_smiles)
+    rdkit_fp, _ = generate_rdkit_fingerprint(std_smiles)
+
+    if ecfp4_fp is None or maccs_fp is None or rdkit_fp is None:
+        return {'compound_name': name, 'valid': False, 'error': "FP generation failed"}
+
+    # 3. Predict
+    combined_fp = np.concatenate([ecfp4_fp, maccs_fp, rdkit_fp])
+    # Column names must match training (ECFP4_0... MACCS_0... RDKit_0...)
+    ecfp4_cols = [f'ECFP4_{i}' for i in range(2048)]
+    maccs_cols = [f'MACCS_{i}' for i in range(167)]
+    rdkit_cols = [f'RDKit_{i}' for i in range(2048)]
+    
+    combined_df = pd.DataFrame([combined_fp], columns=ecfp4_cols + maccs_cols + rdkit_cols)
+    pIC50_pred = model.predict(combined_df)[0]
+
+    # 4. AD Assessment
+    inside_ad, knn_sim, _ = assess_applicability_domain(
+        combined_df.values, X_train_ref, ad_k, ad_threshold
+    )
+
+    # 5. Return dict with flattened fingerprint for easy DF conversion
+    res = {
+        'compound_name': name,
+        'input_smiles': smiles,
+        'standardized_smiles': std_smiles,
+        'valid': True,
+        'pIC50_pred': pIC50_pred,
+        'inside_ad': inside_ad,
+        'knn_similarity': knn_sim,
+        'reliability': 'High' if inside_ad else 'Low'
+    }
+    
+    # Append fingerprint bits directly to dict
+    for i, val in enumerate(ecfp4_fp): res[f'ECFP4_{i}'] = val
+    for i, val in enumerate(maccs_fp): res[f'MACCS_{i}'] = val
+    for i, val in enumerate(rdkit_fp): res[f'RDKit_{i}'] = val
+    
+    return res
+
+class KRASInhibitorPredictor:
+    def __init__(self, model, X_train_ref=None, ad_threshold=0.3, ad_k=5, n_workers=None):
+        self.model = model
+        self.X_train_ref = X_train_ref
+        self.ad_threshold = ad_threshold
+        self.ad_k = ad_k
+        self.n_workers = n_workers or os.cpu_count()
+
+    def predict_batch_parallel(self, df, smiles_col='SMILES', name_col='ID', chunk_size=10000):
+        os.makedirs("predictions/chunks", exist_ok=True)
+        n_total = len(df)
+        all_chunk_files = []
+
+        print(f"Starting parallel processing on {self.n_workers} cores...")
+        
+        # Split dataframe into chunks
+        for chunk_idx, i in enumerate(range(0, n_total, chunk_size)):
+            chunk_df = df.iloc[i : i + chunk_size]
+            tasks = [
+                (row[smiles_col], row.get(name_col, f"C_{idx}"), 
+                 self.model, self.X_train_ref, self.ad_k, self.ad_threshold)
+                for idx, row in chunk_df.iterrows()
+            ]
+
+            chunk_results = []
+            with ProcessPoolExecutor(max_workers=self.n_workers) as executor:
+                # Using list() on tqdm to track progress of the current chunk
+                results = list(tqdm(executor.map(process_single_smiles, tasks), 
+                                    total=len(tasks), 
+                                    desc=f"Chunk {chunk_idx+1}"))
+                chunk_results.extend(results)
+
+            # Save chunk to CSV immediately to free memory
+            chunk_output = f"predictions/chunks/chunk_{chunk_idx}.csv"
+            pd.DataFrame(chunk_results).to_csv(chunk_output, index=False)
+            all_chunk_files.append(chunk_output)
+            print(f"  Saved chunk {chunk_idx} to {chunk_output}")
+
+        # Final Consolidation
+        print("Consolidating all chunks...")
+        final_df = pd.concat([pd.read_csv(f) for f in all_chunk_files], ignore_index=True)
+        return final_df
+
+'''
 class KRASInhibitorPredictor:
     """
     Complete prediction pipeline for KRAS G12D pIC50 prediction.
@@ -482,7 +579,7 @@ class KRASInhibitorPredictor:
         
         writer.close()
         print(f"Exported {n_written} compounds to {output_file}")
-
+'''
 
 if __name__ == "__main__":
     model_file = sys.argv[1]
@@ -503,31 +600,42 @@ if __name__ == "__main__":
     metadata_cols=['molecule_chembl_id', 'smiles', 'pIC50']
     feature_cols = [c for c in training_data.columns if c not in metadata_cols]
 
-    predictor = KRASInhibitorPredictor(model,  training_data[feature_cols].values)
-    results = predictor.predict_batch(library_ref, smiles_col='SMILES', name_col='ZINC_ID')
- 
-    print(results.shape)
+    #predictor = KRASInhibitorPredictor(model,  training_data[feature_cols].values)
+    #results = predictor.predict_batch(library_ref, smiles_col='SMILES', name_col='ID')
+
+    predictor = KRASInhibitorPredictor(
+        model, 
+        training_data[feature_cols].values,
+        n_workers=os.cpu_count() - 1 # Leave one core for OS
+    )
+
+    # Run Batch Prediction (Saves every 10k by default)
+    results = predictor.predict_batch_parallel(library_ref, smiles_col='SMILES', name_col='ID')
+
+    # Save final results
+    results.to_csv('predictions/predictions_final.csv', index=False)
+    print(f"Process complete. Final results: {results.shape}")
 
     os.makedirs("predictions", exist_ok=True)
 
     # Display key results
-    display_cols = [
-        'compound_name', 'valid', 'pIC50_pred',
-        'inside_ad', 'knn_similarity', 'reliability'
-    ]
-    print("\nPrediction Results:")
-    print(results[display_cols].to_string(index=False))
+    #display_cols = [
+    #    'compound_name', 'valid', 'pIC50_pred',
+    #    'inside_ad', 'knn_similarity', 'reliability'
+    #]
+    #print("\nPrediction Results:")
+    #print(results[display_cols].to_string(index=False))
 
     # Save full results with fingerprints
-    results.to_csv('predictions/predictions_full.csv', index=False)
-    print("Full results saved to: predictions_full.csv")
-    print(f"Columns: {len(results.columns)}")
+    #results.to_csv('predictions/predictions_full.csv', index=False)
+    #print("Full results saved to: predictions_full.csv")
+    #print(f"Columns: {len(results.columns)}")
 
     # Export minimal results (no fingerprints)
     minimal_cols = [
-        'compound_name', 'input_smiles', 'standardized_smiles', 'valid', 'error',
+        'compound_name', 'input_smiles', 'standardized_smiles', 'valid',
         'pIC50_pred',
-        'inside_ad', 'knn_similarity', 'nn_similarity', 'reliability'
+        'inside_ad', 'knn_similarity', 'reliability'
     ]
 
     results_minimal = results[minimal_cols]
@@ -548,6 +656,6 @@ if __name__ == "__main__":
     print("Top predictions (sorted by pIC50):")
     print(high_confidence[['compound_name', 'pIC50_pred', 'reliability']].head(10).to_string(index=False))
 
-    predictor.export_to_sdf(results, 'predictions/predictions.sdf')
+    predictor.export_to_sdf(results, 'predictions/prediction.sdf')
 
 
