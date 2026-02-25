@@ -1,0 +1,15 @@
+#PBS -N KRAS_Prediction
+#PBS -l walltime=04:00:00
+#PBS -j oe
+#PBS -l select=1:ncpus=32:mem=64gb
+
+cd $PBS_O_WORKDIR
+
+# Load the specific module found in your list
+module load Miniconda3/24.7.1-0
+
+# Activate your environment
+source activate kras_prediction
+
+# Run your parallel script
+python qsar_pipeline_hpc.py optimised_SVR_CombinedFP.joblib DATASET_fingerprints_combined_train.csv $LIBRARY 32
