@@ -357,7 +357,7 @@ def process_molecule(args):
     
     return res
 
-def export_to_sdf(self, results_df, output_file='predictions.sdf'):
+def export_to_sdf(results_df, output_file='predictions.sdf'):
         """Export predictions to SDF format with properties."""
         writer = SDWriter(output_file)
         n_written = 0
@@ -423,7 +423,7 @@ def main():
     # Final Consolidation: Read from scratch and save to final destination
     print("Consolidating results to permanent storage...")
     final_df = pd.concat([pd.read_csv(f) for f in chunk_files])
-    final_df.to_csv("predictions_final.csv", index=False)
+    final_df.to_csv("predictions/predictions_final.csv", index=False)
     print("Done!")
 
     # Export minimal results (no fingerprints)
@@ -433,14 +433,14 @@ def main():
         'inside_ad', 'knn_similarity', 'reliability'
     ]
 
-    results_minimal = results[minimal_cols]
+    results_minimal = final_df[minimal_cols]
     results_minimal.to_csv('predictions/predictions_minimal.csv', index=False)
     print("Minimal results saved to: predictions_minimal.csv")
 
     # Filter for high-confidence predictions
-    high_confidence = results[
-        (results['valid'] == True) &
-        (results['reliability'] == 'High')
+    high_confidence = final_df[
+        (final_df['valid'] == True) &
+        (final_df['reliability'] == 'High')
     ].copy()
 
     # Sort by predicted potency
@@ -451,7 +451,8 @@ def main():
     print("Top predictions (sorted by pIC50):")
     print(high_confidence[['compound_name', 'pIC50_pred', 'reliability']].head(10).to_string(index=False))
 
-    export_to_sdf(results, 'predictions/prediction.sdf')
+    export_to_sdf(final_df, 'predictions/prediction.sdf')
 
 if __name__ == "__main__":
+    os.makedirs("predictions", exist_ok=True)
     main()
