@@ -12,11 +12,6 @@ from concurrent.futures import ProcessPoolExecutor
 from sklearn.base import BaseEstimator, TransformerMixin
 from threadpoolctl import threadpool_limits
 
-# Inside your main() or init_worker
-# This ensures each worker only uses 1 thread for math, 
-# letting the ProcessPoolExecutor handle the parallelism.
-threadpool_limits(limits=1, user_api='blas')
-
 # --- 1. GLOBAL CONSTANTS (Structural Rules) ---
 # Defined here so EVERY function can see them immediately
 ECFP_LEN = 2048
@@ -291,6 +286,7 @@ def init_worker(model_path, train_ref_path):
     On Linux, this often uses 'Copy-on-Write', making it memory efficient.
     """
     global MODEL, TRAIN_REF
+    threadpool_limits(limits=1, user_api='blas')
     MODEL = joblib.load(model_path)
     # Load reference data; ensure this matches the feature count used in training
     TRAIN_REF = pd.read_csv(train_ref_path)
