@@ -11,3 +11,4 @@ lightgbm==4.6.0
 mordred==1.2.0
 optuna==4.7.0
 datamol==0.12.5
+chembl-downloader==0.5.2
