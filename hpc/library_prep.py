@@ -27,7 +27,7 @@ def sanitize_smiles(smiles):
     except:
         return None
 
-def process_library(df, smiles_column='canonical_smiles'):
+def process_library(df, smiles_column='canonical_smiles', id_column='ID'):
     # Determine number of workers (leave 1-2 cores free for your OS)
     n_cores = max(1, cpu_count() - 2)
     smiles_list = df[smiles_column].tolist()
@@ -40,7 +40,7 @@ def process_library(df, smiles_column='canonical_smiles'):
         # we use a chunksize to reduce the overhead of passing data between cores
         for result in tqdm(pool.imap(sanitize_smiles, smiles_list, chunksize=1000), 
                            total=len(smiles_list), 
-                           desc="Sanitizing ChEMBL"):
+                           desc="Sanitizing library"):
             results.append(result)
             
     df['clean_smiles'] = results
@@ -49,7 +49,7 @@ def process_library(df, smiles_column='canonical_smiles'):
     initial_count = len(df)
     df = df.dropna(subset=['clean_smiles'])
     df = df.drop_duplicates(subset=['clean_smiles'])
-    df = df.rename(columns={"clean_smiles": "SMILES", "chembl_id": "ID"})
+    df = df[["clean_smiles", id_column]].rename(columns={"clean_smiles": "SMILES", id_column: "ID"})
     
     print(f"Finished! Kept {len(df)} of {initial_count} molecules.")
     return df
@@ -57,6 +57,8 @@ def process_library(df, smiles_column='canonical_smiles'):
 if __name__ == "__main__":
     library_file = sys.argv[1]
     name = sys.argv[2]
-    df = process_library(pd.read_csv(library_file))
-    df.to_csv(f"data/{name}", index=False)
+    id_column = sys.argv[3]
+    smiles_column = sys.argv[4]
+    df = process_library(pd.read_csv(library_file), smiles_column, id_column)
+    df.to_csv(f"{name}", index=False)
     

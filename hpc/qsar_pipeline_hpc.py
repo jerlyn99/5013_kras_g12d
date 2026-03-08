@@ -400,7 +400,15 @@ def main():
 
     lib = pd.read_csv(input_file)
     chunk_size = 10000
-    chunk_files = []
+    #chunk_files = []
+    output_file_full = "predictions/predictions_final.csv"
+    output_file_min = "predictions/predictions_minimal.csv"
+    minimal_cols = [
+        'compound_name', 'input_smiles', 'standardized_smiles', 'valid',
+        'pIC50_pred',
+        'inside_ad', 'knn_similarity', 'reliability'
+    ]
+    high_confidence_count = 0
 
     # Initialize Pool with the 'initializer'
     with ProcessPoolExecutor(max_workers=n_workers, 
@@ -416,42 +424,55 @@ def main():
                                 total=len(tasks), desc=f"Batch {i//chunk_size}"))
             
             # Save to LOCAL SCRATCH
-            chunk_path = os.path.join(scratch_dir, f"chunk_{i}.csv")
-            pd.DataFrame(results).to_csv(chunk_path, index=False)
-            chunk_files.append(chunk_path)
+            #chunk_path = os.path.join(scratch_dir, f"chunk_{i}.csv")
+            #pd.DataFrame(results).to_csv(chunk_path, index=False)
+            #chunk_files.append(chunk_path)
+            df_chunk = pd.DataFrame(results)
+            write_header = not os.path.exists(output_file_full)
+            df_chunk.to_csv(output_file_full, mode='a', index=False, header=write_header)
+            df_chunk[minimal_cols].to_csv(output_file_min, mode='a', index=False, header=write_header)
+
+            high_confidence = df_chunk[
+                (df_chunk['valid'] == True) &
+                (df_chunk['reliability'] == 'High')
+            ].copy()
+
+            high_confidence_count += len(high_confidence)
+
+
 
     # Final Consolidation: Read from scratch and save to final destination
-    print("Consolidating results to permanent storage...")
-    final_df = pd.concat([pd.read_csv(f) for f in chunk_files])
-    final_df.to_csv("predictions/predictions_final.csv", index=False)
-    print("Done!")
+    #print("Consolidating results to permanent storage...")
+    #final_df = pd.concat([pd.read_csv(f) for f in chunk_files])
+    #final_df.to_csv("predictions/predictions_final.csv", index=False)
+    #print("Done!")
 
     # Export minimal results (no fingerprints)
-    minimal_cols = [
-        'compound_name', 'input_smiles', 'standardized_smiles', 'valid',
-        'pIC50_pred',
-        'inside_ad', 'knn_similarity', 'reliability'
-    ]
+    #minimal_cols = [
+    #    'compound_name', 'input_smiles', 'standardized_smiles', 'valid',
+    #    'pIC50_pred',
+    #    'inside_ad', 'knn_similarity', 'reliability'
+    #]
 
-    results_minimal = final_df[minimal_cols]
-    results_minimal.to_csv('predictions/predictions_minimal.csv', index=False)
-    print("Minimal results saved to: predictions_minimal.csv")
+    #results_minimal = final_df[minimal_cols]
+    #results_minimal.to_csv('predictions/predictions_minimal.csv', index=False)
+    #print("Minimal results saved to: predictions_minimal.csv")
 
     # Filter for high-confidence predictions
-    high_confidence = final_df[
-        (final_df['valid'] == True) &
-        (final_df['reliability'] == 'High')
-    ].copy()
+    #high_confidence = final_df[
+    #    (final_df['valid'] == True) &
+    #    (final_df['reliability'] == 'High')
+    #].copy()
 
     # Sort by predicted potency
-    high_confidence = high_confidence.sort_values('pIC50_pred', ascending=False)
+    #high_confidence = high_confidence.sort_values('pIC50_pred', ascending=False)
 
-    print(f"High-confidence predictions: {len(high_confidence)} compounds")
-    print()
-    print("Top predictions (sorted by pIC50):")
-    print(high_confidence[['compound_name', 'pIC50_pred', 'reliability']].head(10).to_string(index=False))
+    print(f"High-confidence predictions: {len(high_confidence_count)} compounds")
+    #print()
+    #print("Top predictions (sorted by pIC50):")
+    #print(high_confidence[['compound_name', 'pIC50_pred', 'reliability']].head(10).to_string(index=False))
 
-    export_to_sdf(final_df, 'predictions/prediction.sdf')
+    #export_to_sdf(final_df, 'predictions/prediction.sdf')
 
 if __name__ == "__main__":
     os.makedirs("predictions", exist_ok=True)
