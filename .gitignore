@@ -2,3 +2,4 @@ data/*
 predictions/*
 # macOS system files
 .DS_Store
+hpc/results/*
