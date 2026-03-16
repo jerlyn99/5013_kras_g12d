@@ -27,15 +27,13 @@ def sanitize_smiles(smiles):
     except:
         return None
 
-def process_library(df, smiles_column='canonical_smiles', id_column='ID'):
-    # Determine number of workers (leave 1-2 cores free for your OS)
-    n_cores = max(1, cpu_count() - 2)
+def process_library(df, n_workers, smiles_column='canonical_smiles', id_column='ID'):
     smiles_list = df[smiles_column].tolist()
     
-    print(f"Starting sanitization on {n_cores} cores...")
+    print(f"Starting sanitization on {n_workers} cores...")
     
     results = []
-    with Pool(n_cores) as pool:
+    with Pool(n_workers) as pool:
         # pool.imap allows tqdm to track progress as items are completed
         # we use a chunksize to reduce the overhead of passing data between cores
         for result in tqdm(pool.imap(sanitize_smiles, smiles_list, chunksize=1000), 
@@ -59,6 +57,7 @@ if __name__ == "__main__":
     name = sys.argv[2]
     id_column = sys.argv[3]
     smiles_column = sys.argv[4]
-    df = process_library(pd.read_csv(library_file), smiles_column, id_column)
+    n_workers = int(sys.argv[5])
+    df = process_library(pd.read_csv(library_file), n_workers, smiles_column, id_column)
     df.to_csv(f"{name}", index=False)
     

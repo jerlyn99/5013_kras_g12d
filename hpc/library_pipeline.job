@@ -12,4 +12,4 @@ module load Miniconda3/24.7.1-0
 source activate kras_prediction
 
 # Run your parallel script
-python library_prep.py $INPUT $OUTPUT $ID $SMILES
+python library_prep.py $INPUT $OUTPUT $ID $SMILES 32
