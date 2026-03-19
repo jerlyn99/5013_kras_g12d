@@ -1,4 +1,5 @@
 import sys, re, time, shutil, tempfile
+import traceback
 from rdkit import Chem
 from openbabel import openbabel as ob
 import numpy as np
@@ -10,42 +11,7 @@ from matplotlib.ticker import MultipleLocator
 from pathlib import Path
 from concurrent.futures import ProcessPoolExecutor
 
-def prepare_docking_library(df, output_file):
-    writer = Chem.SDWriter(output_file)
-    
-    for index, row in df.iterrows():
-        mol = Chem.MolFromSmiles(row['smiles'])
-        if not mol: continue
-
-        opts = EnumerateStereoisomers.StereoEnumerationOptions(
-            tryEmbedding=True, 
-            onlyUnassigned=True
-        )
-        isomers = list(EnumerateStereoisomers.EnumerateStereoisomers(mol, options=opts))
-        
-        for i, iso in enumerate(isomers):
-            iso = Chem.AddHs(iso)
-            
-            # Labeling logic:
-            # If there's only 1 isomer, don't bother with the "_iso0" suffix
-            if len(isomers) == 1:
-                mol_id = str(row['molecule_chembl_id'])
-            else:
-                mol_id = f"{row['molecule_chembl_id']}_iso{i}"
-            
-            iso.SetProp("_Name", mol_id)
-            iso.SetProp("parent_id", str(row['molecule_chembl_id']))
-            iso.SetProp("pIC50", str(row['pIC50']))
-            
-            # 3D Generation
-            if AllChem.EmbedMolecule(iso, AllChem.ETKDGv3()) >= 0:
-                AllChem.MMFFOptimizeMolecule(iso)
-                writer.write(iso)
-                
-    writer.close()
-    print("\nDone! Library optimized for defined/undefined stereo.")
-
-def smiles_to_3d_mol(smiles, name):
+def smiles_to_3d_mol(smiles, name, random_seed):
     # 1. SMILES to 2D Mol
     mol = Chem.MolFromSmiles(smiles)
     if mol is None:
@@ -57,7 +23,7 @@ def smiles_to_3d_mol(smiles, name):
     # 3. Generate 3D Coordinates (ETKDGv3 is the modern standard)
     # This creates a "conformer" (the 3D shape)
     params = AllChem.ETKDGv3()
-    params.randomSeed = RANDOM_SEED
+    params.randomSeed = random_seed
     embed_status = AllChem.EmbedMolecule(mol, params)
     
     if embed_status == -1:
@@ -98,7 +64,7 @@ def _ob_sdf_to_pdbqt(sdf_path, pdbqt_path):
     obc.WriteFile(mol, str(pdbqt_path))
 
 
-def _dock_one(lig_name, smiles, label, lig_idx, global_idx, total, 
+def _dock_one(lig_name, smiles, label, global_idx, total, 
                   prot_pdbqt_path, center, size, scoring_func, exhaustiveness, 
                   n_poses, seed_base, cores_per_dock):
     """
@@ -110,7 +76,7 @@ def _dock_one(lig_name, smiles, label, lig_idx, global_idx, total,
         
         try:
             # 1. Convert SMILES to 3D RDKit Mol
-            mol_3d = smiles_to_3d_mol(smiles, lig_name)
+            mol_3d = smiles_to_3d_mol(smiles, lig_name, seed_base)
             if mol_3d is None:
                 return {"Status": "FAILED: 3D embedding failed"}
             
@@ -162,6 +128,8 @@ def _dock_one(lig_name, smiles, label, lig_idx, global_idx, total,
             }
 
         except Exception as err:
+            print(f"DEBUG: {lig_name} failed with error: {err}")
+            traceback.print_exc() # This will print the line number and specific error
             return {"Ligand_name": lig_name, "Status": f"FAILED: {err}", "Is_active": 1 if label == "active" else 0}
 
 if __name__ == "__main__":
@@ -170,13 +138,6 @@ if __name__ == "__main__":
     actives = sys.argv[3]
     decoys = sys.argv[4]
     ref_mol = Chem.MolFromPDBFile(ref_ligand, removeHs=False)
-
-    #prep actives and decoys
-    ACTIVES_PATH = "data/actives.sdf"
-    DECOYS_PATH = "data/decoys.sdf"
-
-    prepare_docking_library(actives, ACTIVES_PATH)
-    prepare_docking_library(decoys, DECOYS_PATH)
 
     #prep binding box
     REF_LIGAND_PADDING = 6.0
@@ -222,11 +183,12 @@ if __name__ == "__main__":
     prot_pdbqt = "data/protein.pdbqt"
     obC.WriteFile(prot_mol, str(prot_pdbqt))
     n_rec = sum(1 for ln in open(prot_pdbqt) if ln.startswith(("ATOM","HETATM")))
-    print(f"    [OK]  {n_rec:,} PDBQT records -> {prot_pdbqt.name}\n")
+    print(f"    [OK]  {n_rec:,} PDBQT records \n")
 
+    #prep actives and ligands
     # 1. Load your data
-    act_mols = pd.read_csv("actives.csv") # Assumes columns 'molecule_chembl_id' and 'smiles'
-    dec_mols  = pd.read_csv("decoys.csv")
+    act_mols = pd.read_csv(actives) # Assumes columns 'molecule_chembl_id' and 'smiles'
+    dec_mols  = pd.read_csv(decoys)
 
     # 2. Build your list for the Parallel Executor
     all_ligands = []
@@ -258,18 +220,12 @@ if __name__ == "__main__":
     CORES_PER_VINA = 1 
     WORKERS = CPU_CORES // CORES_PER_VINA
 
-    all_ligands = []
-    for i, (name, mol) in enumerate(act_mols):
-        all_ligands.append((name, mol, "active", i))
-    for i, (name, mol) in enumerate(dec_mols):
-        all_ligands.append((name, mol, "decoy", i))
-
     print(f"  [HPC] Starting Parallel Pool: {WORKERS} workers, {CORES_PER_VINA} core(s) per ligand")
 
     dock_results = []
     with ProcessPoolExecutor(max_workers=WORKERS) as executor:
         futures = []
-        for idx, (name, mol, label, l_idx) in enumerate(all_ligands):
+        for idx, (name, mol, label) in enumerate(all_ligands):
             # Pass all necessary parameters to the function
             futures.append(executor.submit(
                 _dock_one, name, mol, label, idx, n_total,
