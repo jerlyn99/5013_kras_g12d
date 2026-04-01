@@ -1,4 +1,4 @@
-import sys, time, tempfile, warnings, os, multiprocessing
+import sys, time, tempfile, warnings, os, multiprocessing, csv
 from rdkit import Chem, RDLogger
 from openbabel import openbabel as ob
 import numpy as np
@@ -115,7 +115,7 @@ def smiles_to_3d_mol(smiles, name):
     # 1. SMILES to 2D Mol
     mol = Chem.MolFromSmiles(smiles)
     if mol is None:
-        return None, "Invalid SMILES"
+        return None, "Invalid SMILES", name, None
 
     try:
         Chem.SanitizeMol(mol)
@@ -132,14 +132,12 @@ def smiles_to_3d_mol(smiles, name):
                                               max_iters=MMFF_MAX_ITERS)
 
         if mol3d is None or mol3d.GetNumConformers() == 0:
-            return None, "3D embedding failed"
+            return None, "3D embedding failed", name, None
 
-        mol3d.SetProp("_Name", name)
-        mol3d.SetProp("Converged", str(converged))
-        return mol3d, "SUCCESS"
+        return mol3d, "SUCCESS", name, converged
 
     except Exception as err:
-        return None, str(err)
+        return None, str(err), name, None
     
 def worker_init(prot_path, center, size, scoring_func, cpu_count, base_seed, counter, lock):
     global _worker_vina_obj, _rf_model, _oddt_receptor
@@ -159,6 +157,8 @@ def worker_init(prot_path, center, size, scoring_func, cpu_count, base_seed, cou
         _oddt_receptor.protein = True
         _ = _oddt_receptor.atom_dict
         _rf_model = rfscore(1, _oddt_receptor)
+        if hasattr(_rf_model, 'model'):
+            _rf_model.model.n_jobs = 1
         local_weights = os.path.join(os.getcwd(), 'RFScore_v1_pdbbind2016.pickle')
         if os.path.exists(local_weights):
             try:
@@ -210,7 +210,7 @@ def _dock_one(lig_name, smiles, label, exhaustiveness, n_poses):
     HPC-optimized docking: Uses /tmp for I/O and captures results.
     """
     signal.signal(signal.SIGALRM, handler)
-    signal.alarm(300) # seconds
+    signal.alarm(600) # seconds
 
     #username = os.environ.get('USER', 'default_user')
     #base_scratch = Path(f"/scratch/{username}")
@@ -223,7 +223,7 @@ def _dock_one(lig_name, smiles, label, exhaustiveness, n_poses):
 
         try:
             # 1. Convert SMILES to 3D RDKit Mol
-            mol_3d, status = smiles_to_3d_mol(smiles, lig_name)
+            mol_3d, status, name, converged = smiles_to_3d_mol(smiles, lig_name)
             if mol_3d is None:
                 return {
                     "Ligand_name": lig_name,
@@ -285,16 +285,6 @@ def _dock_one(lig_name, smiles, label, exhaustiveness, n_poses):
                         Chem.SanitizeMol(top_pose_mol, 
                             sanitizeOps=Chem.SanitizeFlags.SANITIZE_ALL ^ Chem.SanitizeFlags.SANITIZE_PROPERTIES)
 
-                        # 3. Add all your Vina and Molecular descriptors
-                        top_pose_mol.SetProp("_Name", f"{lig_name}_docked")
-                        top_pose_mol.SetProp("Vina_Affinity_kcal_mol", f"{best_aff:.4f}")
-                        top_pose_mol.SetProp("Is_Active", "1" if label == "active" else "0")
-                        top_pose_mol.SetProp("RMSD_lower_bound_A",     f"{best_rmsd_lb:.4f}")
-                        top_pose_mol.SetProp("RMSD_upper_bound_A",     f"{best_rmsd_ub:.4f}")
-                        top_pose_mol.SetProp("Formula",                formula)
-                        top_pose_mol.SetProp("MW",                     f"{mw:.3f}")
-                        top_pose_mol.SetProp("LogP",                   f"{logp:.3f}")
-                        top_pose_mol.SetProp("RotatableBonds",         str(rotb))
                     else:
                         sys.stderr.write(f"\n[ERROR] RDKit could not parse the converted SDF for {lig_name}\n")
                 else:
@@ -302,6 +292,7 @@ def _dock_one(lig_name, smiles, label, exhaustiveness, n_poses):
             except Exception as e_sdf:
                 sys.stderr.write(f"\n[CRITICAL] SDF logic failed: {str(e_sdf)}\n")
 
+            rf_val = None
             # 6. RF-Score Rescoring (Only for Top Pose)
             if top_pose_mol is not None:
                 try:
@@ -339,8 +330,6 @@ def _dock_one(lig_name, smiles, label, exhaustiveness, n_poses):
                     # Predict pKd (-log Ki/Kd)
                     rf_val = _rf_model.model.predict(features.reshape(1, -1))[0]
                     
-                    # Add to RDKit molecule properties
-                    top_pose_mol.SetProp("RFScore_pKd", f"{rf_val:.3f}")
                 except Exception as e_rf:
                     sys.stderr.write(f"\n[WARNING] RF-Score failed for {lig_name}: {e_rf}\n")
             
@@ -348,9 +337,12 @@ def _dock_one(lig_name, smiles, label, exhaustiveness, n_poses):
             
             return {
                 "Ligand_name": lig_name, "Label": label, "Is_active": 1 if label == "active" else 0,
+                "Converged": str(converged),
                 "Formula": formula, "MW_Da": round(mw, 3), "LogP": round(logp, 3),
                 "HBD": hbd, "HBA": hba, "RotB": rotb, "TPSA_A2": round(tpsa, 2),
                 "Best_affinity_kcal_mol": round(best_aff, 4), 
+                "best_rmsd_lb": round(best_rmsd_lb, 4),
+                "best_rmsd_ub": round(best_rmsd_ub, 4),
                 "RF_Score_pKd": round(rf_val, 3) if rf_val is not None else None,
                 "Runtime_s": round(elapsed, 2),
                 "Status": "SUCCESS",
@@ -375,7 +367,7 @@ if __name__ == "__main__":
 
     #prep binding box
     REF_LIGAND_PADDING = 6.0
-    CORES_PER_VINA = 1
+    CORES_PER_VINA = 3
     WORKERS = CPU_CORES // CORES_PER_VINA
 
     if ref_mol is None:
@@ -445,7 +437,8 @@ if __name__ == "__main__":
     print(f"\n  Total: {n_actives} actives + {n_decoys} decoys = {n_total} ligands to dock\n")
 
     #docking
-    dock_results  = []   # list of dicts: name, label, best_affinity, ...
+    sc = 0
+    fc = 0
     t0_total      = time.time()
     _W = 56
 
@@ -459,8 +452,22 @@ if __name__ == "__main__":
     worker_lock = manager.Lock()
 
     #create pickle file for rfscore
-    m = rfscore(1, None)
-    m.load()
+    m_init = rfscore(1, None)
+    m_init.load()
+
+    MASTER_HEADERS = [
+        "Ligand_name", "Label", "Is_active", "Status", "Converged", 
+        "Formula", "MW_Da", "LogP", "HBD", "HBA", "RotB", "TPSA_A2",
+        "Best_affinity_kcal_mol", "best_rmsd_lb", "best_rmsd_ub", 
+        "RF_Score_pKd", "Runtime_s"
+    ]
+
+    checkpoint_file = "docking_checkpoint.csv"
+
+    # 2. Initialize the file once before the executor starts
+    with open(checkpoint_file, 'w', newline='') as f:
+        writer = csv.DictWriter(f, fieldnames=MASTER_HEADERS, extrasaction='ignore')
+        writer.writeheader()
 
     with ProcessPoolExecutor(
         max_workers=WORKERS, 
@@ -473,82 +480,65 @@ if __name__ == "__main__":
             ): name for idx, (name, mol, label) in enumerate(all_ligands)
         }
         # 2. Process them as they finish
-        for future in as_completed(future_to_ligand):
-            try:
-                res = future.result()
-                # 1. Handle Successful Docking
-                if res.get("Status") == "SUCCESS":
-                    if res.get("cleaned_mol"):
-                        cleaned_writer.write(res["cleaned_mol"])
-                    if res.get("top_pose_mol"):
-                        poses_writer.write(res["top_pose_mol"])
-                
-                # 2. Extract numeric data (removing heavy mol objects)
-                final_data = {k: v for k, v in res.items() if k not in ['cleaned_mol', 'top_pose_mol']}
-                dock_results.append(final_data)
-                
-                # 3. Explicitly help Python Garbage Collector
-                res = None 
-                
-            except Exception as e:
-                print(f"    Critical Error in future: {e}", flush=True)
+        with open(checkpoint_file, 'a', newline='') as csv_file:
+            csv_writer = csv.DictWriter(csv_file, fieldnames=MASTER_HEADERS, extrasaction='ignore')
+            for future in as_completed(future_to_ligand):
+                try:
+                    res = future.result()
+                    # 1. Handle Successful Docking
+                    if res.get("Status") == "SUCCESS":
+                        sc+=1
+                        # Process Cleaned Molecule
+                        if res.get("cleaned_mol"):
+                            m = res.get("cleaned_mol")
+                            m.SetProp("_Name", str(res["Ligand_name"]))
+                            m.SetProp("Converged", str(res["Converged"]))
+                            cleaned_writer.write(m)
 
-            # 3. Print progress immediately
-            if len(dock_results) % 10 == 0:
-                pd.DataFrame(dock_results).to_csv("docking_checkpoint.csv", index=False)
-                print(f"    Progress: {len(dock_results)}/{n_total} finished...", flush=True)
+                        # Process Top Pose Molecule
+                        if res.get("top_pose_mol"):
+                            tm = res["top_pose_mol"]
+                            tm.SetProp("_Name", f"{res['Ligand_name']}_docked")
+                            tm.SetProp("Vina_Affinity_kcal_mol", str(res["Best_affinity_kcal_mol"]))
+                            tm.SetProp("Is_Active", str(res["Is_active"])) 
+                            tm.SetProp("RMSD_lower_bound_A", str(res["best_rmsd_lb"]))
+                            tm.SetProp("RMSD_upper_bound_A", str(res["best_rmsd_ub"]))
+                            tm.SetProp("Formula", str(res["Formula"]))
+                            tm.SetProp("MW", str(res["MW_Da"]))
+                            tm.SetProp("LogP", str(res["LogP"]))
+                            tm.SetProp("RotatableBonds", str(res["RotB"]))
+                            
+                            # Handle potential None value for RFScore
+                            rf_score = res.get("RF_Score_pKd")
+                            tm.SetProp("RFScore_pKd", str(rf_score) if rf_score is not None else "N/A")
+                            
+                            poses_writer.write(tm)
+                    
+                    else:
+                        fc += 1
+                    
+                    csv_writer.writerow(res)
+                    
+                    done_count = sc+fc
+                    if done_count % 50 == 0:
+                        csv_file.flush()
+                        print(f"    Progress: {done_count}/{n_total} finished...", flush=True)
+                    
+                except Exception as e:
+                    fc += 1
+                    print(f"    Critical Error in future: {e}", flush=True)
 
+                finally:
+                    # IMPORTANT: Remove the reference from the dictionary
+                    # This allows the Future object and its result (the mols) to be deleted
+                    del future_to_ligand[future]
+                    # Explicitly clear 'res' variable in this scope
+                    res = None
     cleaned_writer.close()
     poses_writer.close()
     manager.shutdown()
 
     total_elapsed = time.time() - t0_total
-    n_success = sum(1 for r in dock_results if r["Status"] == "SUCCESS")
-    n_failed  = len(dock_results) - n_success
 
     print(f"\n  {'='*_W}")
-    print(f"  Docking complete | {n_success} succeeded | {n_failed} failed | {total_elapsed:.1f}s\n")
-
-    # -- Collect successful results ---------------------------------------------
-    valid = [r for r in dock_results
-            if r["Status"] == "SUCCESS" and r["Best_affinity_kcal_mol"] is not None]
-
-    if len(valid) < 2:
-        raise RuntimeError("Not enough successful docking results for ROC analysis.")
-
-    n_act_success = sum(1 for r in valid if r["Is_active"] == 1)
-    n_dec_success = sum(1 for r in valid if r["Is_active"] == 0)
-    print(f"  Valid results: {n_act_success} actives + {n_dec_success} decoys = {len(valid)} total")
-
-    if n_act_success == 0 or n_dec_success == 0:
-        raise RuntimeError("Need at least 1 active AND 1 decoy with successful docking for ROC.")
-
-    else:
-        # 2. Convert to DataFrame
-        df = pd.DataFrame(valid)
-
-        # 3. Handle RF-Score edge cases
-        # If ODDT failed for a ligand, we fill with a neutral/low score (e.g., 0.0)
-        if 'RF_Score_pKd' in df.columns:
-            df['RF_Score_pKd'] = df['RF_Score_pKd'].fillna(0.0)
-        else:
-            # If the entire run didn't use RF-Score, initialize column to avoid errors
-            df['RF_Score_pKd'] = 0.0
-
-        # 4. Calculate Ranks for Consensus Scoring
-        # rank_vina: Lower kcal/mol is better (1 is most negative)
-        df['rank_vina'] = df['Best_affinity_kcal_mol'].rank(ascending=True)
-        
-        # rank_rf: Higher pKd is better (1 is highest value)
-        df['rank_rf'] = df['RF_Score_pKd'].rank(ascending=False)
-
-        # 5. Consensus Score: Rank Product (Lower is better)
-        # This combines the 'Physics' (Vina) and 'Knowledge' (RF) metrics
-        df['Consensus_Score'] = np.sqrt(df['rank_vina'] * df['rank_rf'])
-
-        # 6. Final Sort: Show the best Consensus hits at the top
-        df = df.sort_values("Consensus_Score", ascending=True)
-
-        # 7. Save to CSV
-        output_file = "docking_final_results.csv"
-        df.to_csv(output_file, index=False)
+    print(f"  Docking complete | {sc} succeeded | {fc} failed | {total_elapsed:.1f}s\n")
