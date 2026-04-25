@@ -1,0 +1,19 @@
+parm complex_wat.prmtop
+trajin prod_001.nc
+trajin prod_002.nc
+center :1-174
+image familiar
+strip :WAT
+strip :Na+
+rms first @CA
+matrix covar name covmat @CA
+createcrd mycrd
+run
+
+diagmatrix covmat out pca_eigenvectors.dat name pca_modes
+runanalysis
+
+crdaction mycrd projection P1 modes pca_modes out pca_projections.dat \
+  beg 1 end 3 @CA
+runanalysis
+quit

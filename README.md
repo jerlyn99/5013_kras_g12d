@@ -1,24 +1,47 @@
 **Ligand Prep Steps**
 
-1. Download known actives from ChemBL
-2. Use ligand_prep.ipynb to prepare the ligands
+Files: actives_prep.ipynb
+
+1. Download known actives from chemBL
+2. Clean data and filter for relevant actives
+3. Output list of cleaned compounds in "data" folder (DATASET_ic50_cleaned_compounds.csv)
+4. Generate fingerprints and molecular descriptors for actives
+5. Output (fingerprints, molecular descriptors) in "data" folder (e.g. DATASET_ecfp4.csv)
+6. Results and code are found in ligand_prep folder
 
 **Library Prep Steps**
 
-1. Download database from ZINC20 website
-2. Filter through SMILES using sanity_check.py script
-3. Run library_prep.ipynb
+Files: library_prep.ipynb, library_prep.py
 
-**Virtual Screening Steps**
+1. Download database from any virtual library website
+2. Explore library using library_prep.ipynb
+3. Run HPC pipeline for library_prep to generate standardized SMILES for screening
+4. Results and code are found in library_prep folder
+
+**QSAR Model Building Steps**
+
+Files: qsar_model.ipynb, qsar_model_valdiation.ipynb, qsar_pipeline.py, hits_analysis.ipynb
 
 1. Create QSAR model from known actives
-2. Create Pharmacophore model from known actives
-3. Validate that models are able to differentiate actives from decoys
-4. Put library through models to generate rankings and hits
-5. Conduct molecular docking to verify hits
+2. Conduct scaffold splitting and feature selection using *qsar_model.ipynb*
+3. Validate chosen models using *qsar_model_validation.ipynb*
+4. Using qsar_pipeline_hpc.py, use chosen model to generate hits from virtual library
+5. Filter for top candidate hits from virtual library and explore using hits_analysis.ipynb
+6. Results and code are found in qsar folder
 
-**Structural Based Screening Steps**
+**Molecular Docking Steps**
 
-1. Using PharmacoNet, automatically generate pharmacophore models based on protein structure
-2. Based on the output of PharmacoNet, generate and optimise 3D ligand conformations to fit the predefined pharmacophore using DiffPhore
-3. Validate results using molecular docking such as UniDock
+Files: redocking_validation.ipynb, mol_docking_results_analysis.ipynb, molecular_docking_pipeline.py
+
+1. Create molecular docking protocol
+2. Obtain cleaned target and ligand structures
+3. Perform redocking of cleaned ligand onto target using redocking_validation.ipynb
+4. Use known actives from chemBL to evaluate docking protocol in HPC via molecular_docking_pipeline.py
+5. Analyse results of docking validation using mol_docking_results_analysis.ipynb
+6. Dock top candidates from previous step and obtain rankings
+7. Results and code are found in mol_docking folder
+
+**Molecular Dynamics Steps**
+
+1. Perform MD Simulation for top 3 molecules from molecular docking step
+2. Results and code are found in md_sim folder

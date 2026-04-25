@@ -1,0 +1,14 @@
+complex: initial minimization: fixed solute, free solvent and ion
+&cntrl
+imin=1,
+maxcyc=1000,
+ncyc=500,
+ntb=1,
+ntr=1,
+cut=10.0,
+/
+Hold complex (protein+ligand) fixed
+300.0
+RES 1 210
+END
+END

@@ -1,0 +1,28 @@
+# Load topology
+parm complex_wat.prmtop
+
+# Load all production trajectory files in chronological order
+trajin prod_combined.nc
+
+# ---- Analysis 1: RMSD – Protein and Ligand separately ----
+rms first out rmsd_protein.dat :1-174@C,CA,N time 1.0
+rms first out rmsd_ligand.dat :MOL&!@H= time 1.0
+
+# ---- Analysis 2: RMSF by residue ----
+atomicfluct out rmsf.dat :1-174@C,CA,N byres
+
+# ---- Analysis 3: Radius of Gyration ----
+radgyr out rog.dat mass nomax
+
+# ---- Analysis 4: Solvent Accessible Surface Area ----
+surf out surf.dat
+
+# ---- Analysis 5: Protein-Ligand Hydrogen Bonds ----
+hbond HB_prot2lig donormask :1-174 acceptormask :MOL out nhb_prot2lig.dat avgout avghb_prot2lig.dat
+hbond HB_lig2prot donormask :MOL acceptormask :1-174 out nhb_lig2prot.dat avgout avghb_lig2prot.dat
+
+# ---- Analysis 6: Protein-Ligand Electrostatic & vdW Interactions ----
+lie LIE :MOL out lie.dat
+
+run
+quit

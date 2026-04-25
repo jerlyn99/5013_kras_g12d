@@ -1,0 +1,24 @@
+complex: heating stage (100 ps)
+&cntrl
+imin=0,
+irest=0, ntx=1, ! New simulation, read coords only
+nstlim=50000, ! 50,000 steps x 2 fs = 100 ps
+dt=0.002, ! Timestep = 2 fs (requires SHAKE)
+ntc=2, ntf=2, ! SHAKE on H-bonds, omit H-bond forces
+cut=10.0, ! Non-bonded cutoff
+ntb=1, ! Constant volume
+ntr=1, ! Positional restraints on solute
+ntt=3, ! Langevin thermostat
+gamma_ln=1.0, ! Collision frequency (ps^-1)
+tempi=0.0, ! Start temperature (K)
+temp0=300.0, ! Target temperature (K)
+ntpr=5000, ! Print energies every 5000 steps
+ntwx=5000, ! Save coordinates every 5000 steps
+ntwr=5000, ! Save restart every 5000 steps
+ioutfm=1, ! NetCDF trajectory format
+/
+Hold complex fixed
+100.0
+RES 1 210
+END
+END

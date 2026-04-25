@@ -1,0 +1,19 @@
+# Load topology
+parm complex_wat.prmtop
+
+# Load production trajectories
+trajin prod_001.nc
+trajin prod_002.nc
+
+# Re-image and strip solvent
+center :1-174
+image familiar
+
+# RMS-fit to first frame using CA atoms
+rms first @CA
+
+# Write combined, processed trajectory
+trajout prod_combined.nc netcdf
+
+run
+quit
