@@ -1,3 +1,6 @@
+This repository is for a drug discovery project
+"In Silico Prediction of Potential Inhibitors of Kirsten Rat Sarcoma G12D Using Machine Learning-Based Virtual Screening, Molecular Docking, and Molecular Dynamic Simulation Approaches"
+
 **Ligand Prep Steps**
 
 Files: actives_prep.ipynb
