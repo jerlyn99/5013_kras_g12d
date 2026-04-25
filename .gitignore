@@ -2,7 +2,4 @@ data/*
 predictions/*
 # macOS system files
 .DS_Store
-hpc/results/*
-hpc/*.pickle
-hpc/31032026
-hpc/02042026
+hpc/*

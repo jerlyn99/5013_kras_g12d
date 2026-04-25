@@ -1,0 +1,21 @@
+complex: production stage (50 ns per chunk)
+&cntrl
+imin=0,
+irest=1, ntx=5, ! Restart from previous stage
+nstlim=25000000, ! 25,000,000 steps x 2 fs = 50ns
+dt=0.002,
+ntc=2, ntf=2,
+cut=10.0,
+ntb=2, ! Constant pressure periodic boundaries
+ntp=1, ! Isotropic pressure scaling
+barostat=2, ! MC barostat
+pres0=1.0, ! Target pressure: 1 atm
+ntt=3,
+gamma_ln=1.0,
+tempi=300.0,
+temp0=300.0,
+ntpr=50000, ! Print energies every 50000 steps
+ntwx=50000, ! Save trajectory every 50000 steps
+ntwr=50000, ! Save restart every 50000 steps
+ioutfm=1,
+/

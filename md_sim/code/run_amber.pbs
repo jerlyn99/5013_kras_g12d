@@ -1,0 +1,72 @@
+#!/bin/bash
+#PBS -N amber_kras
+#PBS -l select=1:ncpus=2:mem=8gb:ngpus=1
+#PBS -l walltime=48:00:00
+#PBS -j oe
+#PBS -o amber_kras.log
+# ---- Environment setup ----
+source /app1/ebenv
+module load Amber/22.5-foss-2022a-AmberTools-23.5-CUDA-11.7.0
+# ---- Move to working directory ----
+cd $PBS_O_WORKDIR
+PMEMD="pmemd.cuda"
+# ---- Step 1: Restrained Minimization ----
+echo "Starting restrained minimization..."
+$PMEMD -O \
+-i min1.in \
+-o min1.out \
+-p complex_wat.prmtop \
+-c complex_wat.rst7 \
+-r min1.ncrst \
+-ref complex_wat.rst7
+if [ $? -ne 0 ]; then echo "Restrained minimization failed"; exit 1; fi
+# ---- Step 2: Unrestrained Minimization ----
+echo "Starting unrestrained minimization..."
+$PMEMD -O \
+-i min2.in \
+-o min2.out \
+-p complex_wat.prmtop \
+-c min1.ncrst \
+-r min2.ncrst
+if [ $? -ne 0 ]; then echo "Unrestrained minimization failed"; exit 1; fi
+# ---- Step 3: Heating ----
+echo "Starting heating..."
+$PMEMD -O \
+-i md_heat.in \
+-o md_heat.out \
+-p complex_wat.prmtop \
+-c min2.ncrst \
+-r md_heat.ncrst \
+-x md_heat.nc \
+-ref min2.ncrst
+if [ $? -ne 0 ]; then echo "Heating failed"; exit 1; fi
+# ---- Step 4: Equilibration ----
+echo "Starting equilibration..."
+$PMEMD -O \
+-i md_equil.in \
+-o md_equil.out \
+-p complex_wat.prmtop \
+-c md_heat.ncrst \
+-r md_equil.ncrst \
+-x md_equil.nc
+if [ $? -ne 0 ]; then echo "Equilibration failed"; exit 1; fi
+# ---- Step 5: Production (2 x 50 ns chunks = 100 ns total) ----
+PREV_RST=md_equil.ncrst
+for i in $(seq 1 2); do
+PADDED=$(printf "%03d" $i) # 001, 002, 003, ...
+echo "Starting production chunk ${PADDED} (50 ps)..."
+$PMEMD -O \
+-i md_prod.in \
+-o prod_${PADDED}.out \
+-p complex_wat.prmtop \
+-c ${PREV_RST} \
+-r prod_${PADDED}.ncrst \
+-x prod_${PADDED}.nc
+if [ $? -ne 0 ]; then
+echo "Production chunk ${PADDED} failed"
+exit 1
+fi
+# Next chunk restarts from this chunk's restart file
+PREV_RST=prod_${PADDED}.ncrst
+done
+echo "All done! 100 ns total production collected."

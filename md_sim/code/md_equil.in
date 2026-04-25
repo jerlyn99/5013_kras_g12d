@@ -1,0 +1,17 @@
+complex: equilibration stage (100 ps)
+&cntrl
+imin=0,
+irest=1, ntx=5, ! Restart: read coords AND velocities
+nstlim=50000, ! 50,000 steps x 2 fs = 100 ps
+dt=0.002,
+ntc=2, ntf=2,
+cut=10.0,
+ntb=1, ! Constant volume
+ntr=0, ! No positional restraints
+ntt=3,
+gamma_ln=1.0,
+tempi=300.0,
+temp0=300.0,
+ntpr=500, ntwx=500, ntwr=500,
+ioutfm=1,
+/
